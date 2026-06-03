@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Fixture Mundialista">
+  <rect width="512" height="512" rx="96" fill="#1f9bd1"/>
+  <circle cx="256" cy="256" r="176" fill="#ffffff"/>
+  <path fill="#173044" d="M256 95l70 51-27 82h-86l-27-82z"/>
+  <path fill="#18a86b" d="M118 211l83 3 27 83-68 50-67-49z"/>
+  <path fill="#f6b938" d="M394 211l25 87-67 49-68-50 27-83z"/>
+  <path fill="#f0644f" d="M180 397l34-78h82l36 78-76 51z"/>
+  <path fill="none" stroke="#173044" stroke-linecap="round" stroke-linejoin="round" stroke-width="24" d="M213 228h86l27-82M213 228l-27-82M213 228l27 89h82l27-89M160 347l80-30M352 347l-80-30"/>
+</svg>

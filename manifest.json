@@ -1,0 +1,19 @@
+{
+  "name": "Fixture Mundialista",
+  "short_name": "Fixture",
+  "description": "Fixture del Mundial con partidos, grupos, informacion de equipos y llaves finales.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#eef8ff",
+  "theme_color": "#1f9bd1",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
