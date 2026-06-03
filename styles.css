@@ -258,12 +258,21 @@ body[data-view="eliminatorias"] .dashboard-grid {
   grid-template-columns: 1fr;
 }
 
+body[data-view="eliminatorias"] .toolbar {
+  display: none;
+}
+
 body[data-view="eliminatorias"] .right-rail {
   display: none;
 }
 
 body[data-view="grupos"] .dashboard-grid {
   grid-template-columns: 1fr;
+}
+
+body[data-view="grupos"] .filter-group,
+body[data-view="tabla"] .filter-group {
+  display: none;
 }
 
 body[data-view="grupos"] .right-rail {

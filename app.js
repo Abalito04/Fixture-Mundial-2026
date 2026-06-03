@@ -57,6 +57,7 @@ let selectedTeam = allTeams[0];
 
 const els = {
   navItems: document.querySelectorAll(".nav-item"),
+  toolbar: document.querySelector(".toolbar"),
   filtersGroup: document.querySelector(".filter-group"),
   search: document.querySelector("#searchInput"),
   matchList: document.querySelector("#matchList"),
@@ -474,6 +475,17 @@ function titleForView(view) {
   }[view];
 }
 
+function updateToolbar() {
+  const placeholders = {
+    partidos: "Buscar seleccion, sede o partido",
+    grupos: "Buscar grupo o seleccion",
+    tabla: "Buscar seleccion",
+    eliminatorias: ""
+  };
+  els.search.placeholder = placeholders[activeView] || "Buscar seleccion";
+  els.toolbar.setAttribute("aria-label", activeView === "partidos" ? "Filtros de partidos" : "Busqueda");
+}
+
 function filteredMatches() {
   const query = els.search.value.trim().toLowerCase();
   const today = getTodayIsoDate();
@@ -581,9 +593,8 @@ function renderGroupsView() {
   const query = els.search.value.trim().toLowerCase();
   const groupsToShow = worldCupGroups.filter((group) => {
     const teams = groupTeams[group].join(" ").toLowerCase();
-    const byFilter = activeFilter === "Todos" || activeFilter === "Hoy" || activeFilter === group;
     const bySearch = !query || group.toLowerCase().includes(query) || teams.includes(query);
-    return byFilter && bySearch;
+    return bySearch;
   });
 
   els.matchCount.textContent = `${groupsToShow.length} ${groupsToShow.length === 1 ? "grupo" : "grupos"}`;
@@ -623,9 +634,8 @@ function renderTablesInfoView() {
   const query = els.search.value.trim().toLowerCase();
   const groupsToShow = worldCupGroups.filter((group) => {
     const teams = groupTeams[group].join(" ").toLowerCase();
-    const byFilter = activeFilter === "Todos" || activeFilter === "Hoy" || activeFilter === group;
     const bySearch = !query || group.toLowerCase().includes(query) || teams.includes(query);
-    return byFilter && bySearch;
+    return bySearch;
   });
 
   const localTeams = groupsToShow.flatMap((group) => groupTeams[group]);
@@ -986,6 +996,7 @@ function formatDate(value) {
 }
 
 function render() {
+  updateToolbar();
   renderMatches();
   renderStandings();
   renderKnockout();
