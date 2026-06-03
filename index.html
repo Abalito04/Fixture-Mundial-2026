@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Fixture Mundialista</title>
+    <link rel="stylesheet" href="styles.css?v=27" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar" aria-label="Navegacion principal">
+        <div class="brand">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <span>Fixture Mundialista</span>
+        </div>
+        <nav class="nav-list">
+          <button class="nav-item active" data-view="partidos" type="button">Partidos</button>
+          <button class="nav-item" data-view="grupos" type="button">Grupos</button>
+          <button class="nav-item" data-view="tabla" type="button">Informacion de equipos</button>
+          <button class="nav-item" data-view="eliminatorias" type="button">Llaves finales</button>
+        </nav>
+        <div class="sidebar-panel">
+          <span class="panel-label">Progreso</span>
+          <strong id="progressText">0/0</strong>
+          <div class="progress-track">
+            <span id="progressBar"></span>
+          </div>
+        </div>
+      </aside>
+
+      <main class="main">
+        <header class="topbar">
+          <div>
+            <h1>Fixture Mundialista</h1>
+          </div>
+        </header>
+
+        <section class="toolbar" aria-label="Filtros del fixture">
+          <label class="search-box">
+            <span aria-hidden="true">⌕</span>
+            <input id="searchInput" type="search" placeholder="Buscar seleccion" />
+          </label>
+          <div class="filter-group" role="group" aria-label="Filtrar partidos">
+            <button class="filter active" data-filter="Todos" type="button">Todos</button>
+            <button class="filter" data-filter="Hoy" type="button">Hoy</button>
+            <button class="filter" data-filter="Grupo A" type="button">Grupo A</button>
+            <button class="filter" data-filter="Grupo B" type="button">Grupo B</button>
+          </div>
+        </section>
+
+        <div class="dashboard-grid">
+          <section class="fixture-panel" aria-labelledby="fixtureTitle">
+            <div class="section-heading">
+              <h2 id="fixtureTitle">Partidos</h2>
+              <span id="matchCount">0 partidos</span>
+            </div>
+            <div id="matchList" class="match-list"></div>
+          </section>
+
+          <aside class="right-rail">
+            <section class="standings-panel" aria-labelledby="standingsTitle">
+              <div class="section-heading">
+                <h2 id="standingsTitle">Tabla</h2>
+                <select id="groupSelect" aria-label="Grupo de tabla">
+                  <option>Grupo A</option>
+                  <option>Grupo B</option>
+                  <option>Grupo C</option>
+                </select>
+              </div>
+              <div id="standingsTable" class="standings-table"></div>
+            </section>
+          </aside>
+        </div>
+      </main>
+    </div>
+
+    <dialog id="matchDialog" class="match-dialog">
+      <form id="matchForm" method="dialog">
+        <div class="dialog-head">
+          <h2>Agregar partido</h2>
+          <button class="icon-button" id="closeDialog" type="button" aria-label="Cerrar">×</button>
+        </div>
+        <div class="form-grid">
+          <label>
+            Grupo
+            <select name="group" required>
+              <option>Grupo A</option>
+              <option>Grupo B</option>
+              <option>Grupo C</option>
+            </select>
+          </label>
+          <label>
+            Fecha
+            <input name="date" type="date" required />
+          </label>
+          <label>
+            Hora
+            <input name="time" type="time" required />
+          </label>
+          <label>
+            Equipo local
+            <input name="home" type="text" required placeholder="Argentina" />
+          </label>
+          <label>
+            Equipo visitante
+            <input name="away" type="text" required placeholder="Mexico" />
+          </label>
+          <label>
+            Sede
+            <input name="venue" type="text" required placeholder="Estadio Central" />
+          </label>
+        </div>
+        <div class="dialog-actions">
+          <button class="ghost-button" id="cancelDialog" type="button">Cancelar</button>
+          <button class="primary-button" type="submit">Guardar partido</button>
+        </div>
+      </form>
+    </dialog>
+
+    <script src="app.js?v=27"></script>
+  </body>
+</html>
