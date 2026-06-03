@@ -1295,12 +1295,29 @@ body[data-view="grupos"] .right-rail {
     align-items: stretch;
     flex-direction: column;
     gap: 10px;
+    min-width: 0;
   }
 
   .toolbar input,
   .toolbar select,
   .toolbar button {
     width: 100%;
+  }
+
+  .filter-group {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    padding-bottom: 4px;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+  }
+
+  .toolbar .filter {
+    flex: 0 0 auto;
+    width: auto;
+    min-height: 38px;
+    padding: 0 12px;
   }
 
   .match-card {
