@@ -31,6 +31,7 @@ const groupTeams = {
 const worldCupGroups = Object.keys(groupTeams);
 const storageKey = "worldCupFixtureV5";
 const apiCacheKey = "worldCupApiCacheV6";
+const liveRefreshMs = 60000;
 const allTeams = worldCupGroups.flatMap((group) => groupTeams[group]);
 const flagFallbacks = {
   Inglaterra: "https://flagcdn.com/w160/gb-eng.png",
@@ -205,18 +206,18 @@ function createGroupStageMatches() {
 }
 
 async function syncOpenFootball() {
-  openFootballStatus = "Sincronizando OpenFootball...";
+  openFootballStatus = "Actualizando resultados...";
   renderMatches();
 
   try {
-    const response = await fetch("/api/openfootball/worldcup2026");
+    const response = await fetch("/api/live/matches");
     const payload = await response.json();
-    if (!response.ok) throw new Error(payload.error || "No se pudo traer OpenFootball.");
+    if (!response.ok) throw new Error(payload.error || "No se pudieron traer resultados.");
 
-    const previousByKey = new Map(matches.map((match) => [match.externalKey || getMatchKey(match), match]));
-    matches = payload.matches.map((match, index) => normalizeOpenFootballMatch(match, index + 1, previousByKey));
+    const source = response.headers.get("X-Data-Source") || "local";
+    matches = normalizeLiveMatchesPayload(payload, source);
     saveMatches();
-    openFootballStatus = `OpenFootball: ${matches.length} partidos`;
+    openFootballStatus = `${sourceLabel(source)}: ${matches.length} partidos`;
   } catch (error) {
     openFootballStatus = error.message;
   }
@@ -224,10 +225,34 @@ async function syncOpenFootball() {
   render();
 }
 
+function normalizeLiveMatchesPayload(payload, source) {
+  const zafronixMatches = payload.data || payload.matches || [];
+  if (Array.isArray(zafronixMatches) && source.startsWith("zafronix")) {
+    return zafronixMatches.map((match, index) => normalizeZafronixMatch(match, index + 1));
+  }
+
+  if (Array.isArray(payload.matches)) {
+    return payload.matches.map((match, index) => normalizeOpenFootballMatch(match, index + 1));
+  }
+
+  return seedMatches;
+}
+
+function sourceLabel(source) {
+  const labels = {
+    "zafronix-live": "Zafronix vivo",
+    "zafronix-cache": "Zafronix cache 1 min",
+    "zafronix-stale-cache": "Zafronix cache anterior",
+    "openfootball-snapshot": "Fixture local",
+    "local-snapshot": "Fixture local"
+  };
+  return labels[source] || "Resultados";
+}
+
 function normalizeOpenFootballMatch(match, id, previousByKey) {
   const group = translateGroup(match.group);
   const score = match.score?.ft || null;
-  const normalized = {
+  return {
     id,
     externalKey: `${match.date}|${match.team1}|${match.team2}|${match.round}`,
     round: translateRound(match.round),
@@ -241,8 +266,73 @@ function normalizeOpenFootballMatch(match, id, previousByKey) {
     scoreAway: Array.isArray(score) ? score[1] : null,
     confirmed: Array.isArray(score)
   };
-  const previous = previousByKey.get(normalized.externalKey);
-  return previous ? { ...normalized, scoreHome: previous.scoreHome, scoreAway: previous.scoreAway, confirmed: previous.confirmed } : normalized;
+}
+
+function normalizeZafronixMatch(match, id) {
+  const kickoff = match.kickoffUtc || match.kickoff || match.date;
+  const kickoffDate = kickoff ? new Date(kickoff) : null;
+  const scoreHome = readScore(match, "home");
+  const scoreAway = readScore(match, "away");
+  const status = String(match.status || match.state || "").toLowerCase();
+  return {
+    id: match.matchId || match.id || id,
+    externalKey: match.matchId || match.id || `${kickoff}|${match.home || match.homeTeam}|${match.away || match.awayTeam}`,
+    round: translateZafronixStage(match.stageNormalized || match.stage || match.stageRaw),
+    group: zafronixGroup(match.stageNormalized || match.stage || match.stageRaw),
+    date: kickoffDate && !Number.isNaN(kickoffDate.valueOf()) ? kickoffDate.toISOString().slice(0, 10) : String(match.date || "").slice(0, 10),
+    time: formatArgentinaKickoff(kickoffDate),
+    home: translateTeamName(match.home || match.homeTeam || match.homeName || "Local"),
+    away: translateTeamName(match.away || match.awayTeam || match.awayName || "Visitante"),
+    venue: [match.stadium, match.city].filter(Boolean).join(" · ") || match.venue || "Sede por confirmar",
+    scoreHome,
+    scoreAway,
+    confirmed: ["final", "finished", "finalized", "full_time", "ft"].includes(status) || Boolean(match.winner),
+    live: ["live", "in_progress", "playing", "first_half", "second_half", "half_time"].includes(status),
+    minute: match.minute || match.clock || ""
+  };
+}
+
+function readScore(match, side) {
+  const directKey = `${side}Score`;
+  if (match[directKey] !== undefined && match[directKey] !== null) return match[directKey];
+  if (match.result?.[directKey] !== undefined && match.result?.[directKey] !== null) return match.result[directKey];
+  if (match.score?.[side] !== undefined && match.score?.[side] !== null) return match.score[side];
+  return null;
+}
+
+function zafronixGroup(stage) {
+  const value = String(stage || "").toLowerCase();
+  const groupMatch = value.match(/group[_ -]?([a-l])/);
+  return groupMatch ? `Grupo ${groupMatch[1].toUpperCase()}` : "Eliminatorias";
+}
+
+function translateZafronixStage(stage) {
+  const value = String(stage || "");
+  const labels = {
+    r32: "Dieciseisavos",
+    round_of_32: "Dieciseisavos",
+    r16: "Octavos",
+    round_of_16: "Octavos",
+    qf: "Cuartos",
+    quarter_final: "Cuartos",
+    sf: "Semifinal",
+    semi_final: "Semifinal",
+    thirdPlace: "Tercer puesto",
+    third_place: "Tercer puesto",
+    final: "Final"
+  };
+  if (/group[_ -]?[a-l]/i.test(value)) return "";
+  return labels[value] || value || "";
+}
+
+function formatArgentinaKickoff(date) {
+  if (!date || Number.isNaN(date.valueOf())) return "Horario por confirmar";
+  return `${new Intl.DateTimeFormat("es-AR", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+    timeZone: "America/Argentina/Buenos_Aires"
+  }).format(date)} ARG`;
 }
 
 function cleanOpenFootballTime(time) {
@@ -755,6 +845,7 @@ function renderTeamDetail(team) {
 }
 
 function renderMatchCard(match) {
+  const statusText = match.live ? `En vivo${match.minute ? ` · ${match.minute}` : ""}` : match.confirmed ? "Confirmado" : "Pendiente";
   return `
     <article class="match-card">
       <div class="match-meta">
@@ -769,7 +860,7 @@ function renderMatchCard(match) {
       </div>
       <div class="score-control" aria-label="Resultado">
         <span class="readonly-score">${match.scoreHome ?? "-"} - ${match.scoreAway ?? "-"}</span>
-        <span class="result-status ${match.confirmed ? "confirmed" : ""}">${match.confirmed ? "Confirmado" : "Pendiente"}</span>
+        <span class="result-status ${match.confirmed ? "confirmed" : ""} ${match.live ? "live" : ""}">${statusText}</span>
       </div>
     </article>
   `;
@@ -1006,6 +1097,11 @@ function render() {
 document.body.dataset.view = activeView;
 render();
 syncOpenFootball();
+setInterval(() => {
+  if (document.visibilityState === "visible") {
+    syncOpenFootball();
+  }
+}, liveRefreshMs);
 if (!cachedTeamProfiles) {
   syncZafronix();
 }

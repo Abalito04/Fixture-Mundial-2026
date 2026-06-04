@@ -1,11 +1,11 @@
-const CACHE_NAME = "fixture-mundialista-v1";
+const CACHE_NAME = "road-to-26-v4";
 const APP_SHELL = [
   "/",
   "/index.html",
-  "/styles.css?v=32",
-  "/app.js?v=32",
+  "/styles.css?v=37",
+  "/app.js?v=37",
   "/manifest.json",
-  "/icon.svg",
+  "/assets/road-to-26.png",
   "/api/openfootball/worldcup2026",
   "/api/zafronix/tournament2026"
 ];

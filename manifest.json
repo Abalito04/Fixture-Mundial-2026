@@ -1,7 +1,7 @@
 {
-  "name": "Fixture Mundialista",
-  "short_name": "Fixture",
-  "description": "Fixture del Mundial con partidos, grupos, informacion de equipos y llaves finales.",
+  "name": "Road to '26",
+  "short_name": "Road 26",
+  "description": "Partidos, grupos, informacion de equipos y camino a la copa 2026.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
@@ -10,9 +10,9 @@
   "theme_color": "#1f9bd1",
   "icons": [
     {
-      "src": "/icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
+      "src": "/assets/road-to-26.png",
+      "sizes": "512x512",
+      "type": "image/png",
       "purpose": "any maskable"
     }
   ]

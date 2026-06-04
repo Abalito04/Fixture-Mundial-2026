@@ -1,4 +1,5 @@
 import os
+import time
 from pathlib import Path
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
@@ -8,8 +9,13 @@ from flask import Flask, Response, jsonify, send_from_directory
 
 BASE_DIR = Path(__file__).resolve().parent
 DATA_DIR = BASE_DIR / "data"
+OPENFOOTBALL_SNAPSHOT = DATA_DIR / "openfootball-worldcup2026.json"
+ZAFRONIX_SNAPSHOT = DATA_DIR / "zafronix-tournament2026.json"
 ZAFRONIX_TOURNAMENT_2026_URL = "https://api.zafronix.com/fifa/worldcup/v1/tournaments/2026"
+ZAFRONIX_MATCHES_2026_URL = "https://api.zafronix.com/fifa/worldcup/v1/matches?year=2026&limit=500"
 API_TIMEOUT_SECONDS = 20
+LIVE_CACHE_SECONDS = int(os.environ.get("LIVE_SCORE_CACHE_SECONDS", "60"))
+live_matches_cache = {"body": None, "fetched_at": 0.0}
 
 app = Flask(__name__, static_folder=None)
 
@@ -32,7 +38,7 @@ def static_files(filename):
 
 @app.get("/api/openfootball/worldcup2026")
 def openfootball_snapshot():
-    return json_file(DATA_DIR / "openfootball-worldcup2026.json")
+    return json_file(OPENFOOTBALL_SNAPSHOT)
 
 
 @app.get("/api/zafronix/tournament2026")
@@ -40,7 +46,15 @@ def zafronix_snapshot():
     live_response = fetch_zafronix_tournament()
     if live_response:
         return live_response
-    return json_file(DATA_DIR / "zafronix-tournament2026.json")
+    return json_file(ZAFRONIX_SNAPSHOT)
+
+
+@app.get("/api/live/matches")
+def live_matches():
+    live_response = fetch_cached_zafronix_matches()
+    if live_response:
+        return live_response
+    return json_file(OPENFOOTBALL_SNAPSHOT, source="openfootball-snapshot")
 
 
 @app.get("/health")
@@ -48,13 +62,13 @@ def health():
     return jsonify({"ok": True})
 
 
-def json_file(path):
+def json_file(path, source="local-snapshot"):
     if not path.exists():
         return jsonify({"error": f"No existe {path.name}"}), 404
     return Response(
         path.read_text(encoding="utf-8"),
         mimetype="application/json",
-        headers={"X-Data-Source": "local-snapshot"},
+        headers={"X-Data-Source": source},
     )
 
 
@@ -76,6 +90,54 @@ def fetch_zafronix_tournament():
                 headers={"X-Data-Source": "zafronix-live"},
             )
     except (HTTPError, URLError, TimeoutError, OSError):
+        return None
+
+
+def fetch_cached_zafronix_matches():
+    api_key = os.environ.get("ZAFRONIX_API_KEY")
+    if not api_key:
+        return None
+
+    now = time.time()
+    cache_age = now - live_matches_cache["fetched_at"]
+    if live_matches_cache["body"] and cache_age < LIVE_CACHE_SECONDS:
+        return Response(
+            live_matches_cache["body"],
+            mimetype="application/json",
+            headers={
+                "X-Data-Source": "zafronix-cache",
+                "X-Cache-Seconds": str(LIVE_CACHE_SECONDS),
+            },
+        )
+
+    request = Request(
+        ZAFRONIX_MATCHES_2026_URL,
+        headers={"X-API-Key": api_key},
+    )
+
+    try:
+        with urlopen(request, timeout=API_TIMEOUT_SECONDS) as response:
+            body = response.read()
+            live_matches_cache["body"] = body
+            live_matches_cache["fetched_at"] = now
+            return Response(
+                body,
+                mimetype="application/json",
+                headers={
+                    "X-Data-Source": "zafronix-live",
+                    "X-Cache-Seconds": str(LIVE_CACHE_SECONDS),
+                },
+            )
+    except (HTTPError, URLError, TimeoutError, OSError):
+        if live_matches_cache["body"]:
+            return Response(
+                live_matches_cache["body"],
+                mimetype="application/json",
+                headers={
+                    "X-Data-Source": "zafronix-stale-cache",
+                    "X-Cache-Seconds": str(LIVE_CACHE_SECONDS),
+                },
+            )
         return None
 
 
