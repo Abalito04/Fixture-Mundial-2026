@@ -1912,14 +1912,73 @@ input {
     display: flex;
   }
 
+  .match-stage-toggle {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "stage summary"
+      "stage-action stage-action";
+    min-height: auto;
+    padding: 12px;
+  }
+
+  .match-stage-toggle span {
+    grid-area: stage;
+  }
+
+  .match-stage-toggle strong {
+    grid-area: summary;
+  }
+
+  .match-stage-toggle em {
+    grid-area: stage-action;
+    justify-self: start;
+    min-height: 30px;
+    display: inline-grid;
+    place-items: center;
+    border-radius: 999px;
+    padding: 0 10px;
+    color: var(--primary);
+    background: #fff;
+  }
+
   .match-group-toggle {
     grid-template-columns: 76px minmax(0, 1fr);
+    grid-template-areas:
+      "title teams"
+      "summary summary"
+      "action action";
     gap: 10px;
+    align-items: start;
+    min-height: auto;
+  }
+
+  .match-group-title {
+    grid-area: title;
+  }
+
+  .match-group-teams {
+    grid-area: teams;
   }
 
   .match-group-summary,
   .match-group-toggle strong {
     justify-self: start;
+  }
+
+  .match-group-summary {
+    grid-area: summary;
+    white-space: normal;
+  }
+
+  .match-group-toggle strong {
+    grid-area: action;
+    min-height: 30px;
+    display: inline-grid;
+    place-items: center;
+    border-radius: 999px;
+    padding: 0 10px;
+    color: #fff;
+    background: var(--primary);
   }
 
   .match-card {
