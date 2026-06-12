@@ -222,17 +222,23 @@ async function syncOpenFootball() {
 
 async function fetchFixturesPayload() {
   try {
-    return await fetchJsonWithFallback("/api/api-football/worldcup2026", "");
+    const apiFootballPayload = await fetchJsonWithFallback("/api/api-football/worldcup2026", "");
+    if (hasApiFootballFixtures(apiFootballPayload)) return apiFootballPayload;
+    throw new Error("API-Football no trajo partidos para este torneo.");
   } catch {
     return fetchJsonWithFallback("/api/openfootball/worldcup2026", "data/openfootball-worldcup2026.json");
   }
 }
 
 function normalizeFixturePayload(payload) {
-  if (Array.isArray(payload.response)) {
+  if (hasApiFootballFixtures(payload)) {
     return payload.response.map((fixture, index) => normalizeApiFootballFixture(fixture, index + 1));
   }
   return (payload.matches || []).map((match, index) => normalizeOpenFootballMatch(match, index + 1));
+}
+
+function hasApiFootballFixtures(payload) {
+  return Array.isArray(payload?.response) && payload.response.length > 0;
 }
 
 function fixtureSourceLabel(source) {

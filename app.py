@@ -1,5 +1,6 @@
 import os
 import time
+import json
 from pathlib import Path
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
@@ -118,6 +119,8 @@ def fetch_api_football_fixtures():
     try:
         with urlopen(request, timeout=API_TIMEOUT_SECONDS) as response:
             body = response.read()
+            if not api_football_has_fixtures(body):
+                return None
             api_football_cache["body"] = body
             api_football_cache["fetched_at"] = now
             return Response(
@@ -139,6 +142,14 @@ def fetch_api_football_fixtures():
                 },
             )
         return None
+
+
+def api_football_has_fixtures(body):
+    try:
+        payload = json.loads(body.decode("utf-8"))
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        return False
+    return bool(payload.get("response"))
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", "5000"))
