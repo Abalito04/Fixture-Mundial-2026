@@ -480,7 +480,7 @@ async function syncZafronix() {
   render();
 
   try {
-    const payload = await fetchJsonWithFallback("/api/zafronix/tournament2026", "data/zafronix-tournament2026.json");
+    const payload = await fetchTeamProfilesPayload();
     const source = payload.__source;
 
     const profiles = {};
@@ -503,6 +503,10 @@ async function syncZafronix() {
       };
     });
 
+    if (!Object.keys(profiles).length) {
+      throw new Error("No se encontraron planteles en la fuente de equipos.");
+    }
+
     teamProfiles = { ...teamProfiles, ...profiles };
     saveApiCache();
     const sourceLabel = source === "zafronix-live" ? "API" : "local";
@@ -512,6 +516,12 @@ async function syncZafronix() {
   }
 
   render();
+}
+
+async function fetchTeamProfilesPayload() {
+  const payload = await fetchJsonWithFallback("/api/zafronix/tournament2026", "data/zafronix-tournament2026.json");
+  if (Array.isArray(payload.teams) && payload.teams.length) return payload;
+  return fetchLocalJson("data/zafronix-tournament2026.json");
 }
 
 async function fetchJsonWithFallback(primaryUrl, fallbackUrl) {
@@ -527,6 +537,13 @@ async function fetchJsonWithFallback(primaryUrl, fallbackUrl) {
     if (!fallbackResponse.ok) throw primaryError;
     return { ...payload, __source: "local" };
   }
+}
+
+async function fetchLocalJson(url) {
+  const response = await fetch(url);
+  const payload = await response.json();
+  if (!response.ok) throw new Error(`No se pudo cargar ${url}.`);
+  return { ...payload, __source: "local" };
 }
 
 function translatePosition(position) {
