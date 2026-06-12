@@ -205,20 +205,46 @@ function createGroupStageMatches() {
 }
 
 async function syncOpenFootball() {
-  openFootballStatus = "Sincronizando OpenFootball...";
+  openFootballStatus = "Sincronizando resultados...";
   renderMatches();
 
   try {
-    const payload = await fetchJsonWithFallback("/api/openfootball/worldcup2026", "data/openfootball-worldcup2026.json");
-
-    matches = payload.matches.map((match, index) => normalizeOpenFootballMatch(match, index + 1));
+    const payload = await fetchFixturesPayload();
+    matches = normalizeFixturePayload(payload);
     saveMatches();
-    openFootballStatus = `OpenFootball: ${matches.length} partidos`;
+    openFootballStatus = `${fixtureSourceLabel(payload.__source)}: ${matches.length} partidos`;
   } catch (error) {
     openFootballStatus = error.message;
   }
 
   render();
+}
+
+async function fetchFixturesPayload() {
+  try {
+    return await fetchJsonWithFallback("/api/api-football/worldcup2026", "");
+  } catch {
+    return fetchJsonWithFallback("/api/openfootball/worldcup2026", "data/openfootball-worldcup2026.json");
+  }
+}
+
+function normalizeFixturePayload(payload) {
+  if (Array.isArray(payload.response)) {
+    return payload.response.map((fixture, index) => normalizeApiFootballFixture(fixture, index + 1));
+  }
+  return (payload.matches || []).map((match, index) => normalizeOpenFootballMatch(match, index + 1));
+}
+
+function fixtureSourceLabel(source) {
+  const labels = {
+    "api-football-live": "API-Football",
+    "api-football-cache": "API-Football cache",
+    "api-football-stale-cache": "API-Football cache anterior",
+    "local-snapshot": "Fixture local",
+    local: "Fixture local",
+    api: "OpenFootball"
+  };
+  return labels[source] || "Resultados";
 }
 
 function normalizeOpenFootballMatch(match, id, previousByKey) {
@@ -238,6 +264,59 @@ function normalizeOpenFootballMatch(match, id, previousByKey) {
     scoreAway: Array.isArray(score) ? score[1] : null,
     confirmed: Array.isArray(score)
   };
+}
+
+function normalizeApiFootballFixture(item, id) {
+  const home = translateTeamName(item.teams?.home?.name || "Local");
+  const away = translateTeamName(item.teams?.away?.name || "Visitante");
+  const kickoff = item.fixture?.date ? new Date(item.fixture.date) : null;
+  const scoreHome = item.goals?.home;
+  const scoreAway = item.goals?.away;
+  const statusShort = item.fixture?.status?.short || "";
+  const statusLong = item.fixture?.status?.long || "";
+  const round = translateApiFootballRound(item.league?.round || "");
+  return {
+    id: item.fixture?.id || id,
+    externalKey: String(item.fixture?.id || `${item.fixture?.date}|${home}|${away}`),
+    round,
+    group: getSharedGroup(home, away) || "Eliminatorias",
+    date: kickoff && !Number.isNaN(kickoff.valueOf()) ? kickoff.toISOString().slice(0, 10) : "",
+    time: formatArgentinaTime(kickoff),
+    home,
+    away,
+    venue: [item.fixture?.venue?.name, item.fixture?.venue?.city].filter(Boolean).join(" · ") || "Sede por confirmar",
+    scoreHome: scoreHome ?? null,
+    scoreAway: scoreAway ?? null,
+    confirmed: ["FT", "AET", "PEN"].includes(statusShort),
+    live: ["1H", "HT", "2H", "ET", "BT", "P", "LIVE"].includes(statusShort),
+    minute: item.fixture?.status?.elapsed ? `${item.fixture.status.elapsed}'` : statusLong
+  };
+}
+
+function translateApiFootballRound(round) {
+  const value = String(round || "");
+  if (/group/i.test(value)) return "";
+  if (/round of 32/i.test(value)) return "Dieciseisavos";
+  if (/round of 16/i.test(value)) return "Octavos";
+  if (/quarter/i.test(value)) return "Cuartos";
+  if (/semi/i.test(value)) return "Semifinal";
+  if (/third/i.test(value)) return "Tercer puesto";
+  if (/final/i.test(value)) return "Final";
+  return value;
+}
+
+function getSharedGroup(home, away) {
+  return worldCupGroups.find((group) => groupTeams[group].includes(home) && groupTeams[group].includes(away));
+}
+
+function formatArgentinaTime(date) {
+  if (!date || Number.isNaN(date.valueOf())) return "Hora a confirmar";
+  return `${new Intl.DateTimeFormat("es-AR", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+    timeZone: "America/Argentina/Buenos_Aires"
+  }).format(date)} ARG`;
 }
 
 function cleanOpenFootballTime(time) {
@@ -442,6 +521,7 @@ async function fetchJsonWithFallback(primaryUrl, fallbackUrl) {
     if (!response.ok) throw new Error(payload.error || "No se pudo traer datos.");
     return { ...payload, __source: response.headers.get("X-Data-Source") || "api" };
   } catch (primaryError) {
+    if (!fallbackUrl) throw primaryError;
     const fallbackResponse = await fetch(fallbackUrl);
     const payload = await fallbackResponse.json();
     if (!fallbackResponse.ok) throw primaryError;
