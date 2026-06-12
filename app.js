@@ -30,6 +30,7 @@ const groupTeams = {
 
 const worldCupGroups = Object.keys(groupTeams);
 const storageKey = "worldCupFixtureV5";
+const manualResultsKey = "roadTo26ManualResultsV1";
 const apiCacheKey = "worldCupApiCacheV6";
 const allTeams = worldCupGroups.flatMap((group) => groupTeams[group]);
 const flagFallbacks = {
@@ -48,7 +49,8 @@ if (cachedTeamProfiles) {
 
 const seedMatches = createGroupStageMatches();
 
-let matches = loadMatches();
+let manualResults = loadManualResults();
+let matches = applyManualResults(loadMatches());
 let activeFilter = "Todos";
 let activeView = "partidos";
 let openMatchGroups = new Set(["Grupo A"]);
@@ -120,6 +122,45 @@ els.matchList.addEventListener("click", async (event) => {
   await syncFifaApi();
 });
 
+els.matchList.addEventListener("click", (event) => {
+  const saveButton = event.target.closest("[data-save-result]");
+  const clearButton = event.target.closest("[data-clear-result]");
+  const actionButton = saveButton || clearButton;
+  if (!actionButton) return;
+
+  const matchId = Number(actionButton.dataset.saveResult || actionButton.dataset.clearResult);
+  const match = matches.find((item) => item.id === matchId);
+  if (!match) return;
+
+  const resultKey = getManualResultKey(match);
+  if (clearButton) {
+    delete manualResults[resultKey];
+    saveManualResults();
+    matches = matches.map((item) => getManualResultKey(item) === resultKey
+      ? { ...item, scoreHome: null, scoreAway: null, confirmed: false, manual: false }
+      : item);
+    render();
+    return;
+  }
+
+  const card = actionButton.closest(".match-card");
+  const homeInput = card?.querySelector("[data-score-home]");
+  const awayInput = card?.querySelector("[data-score-away]");
+  const scoreHome = Number(homeInput?.value);
+  const scoreAway = Number(awayInput?.value);
+
+  if (!Number.isInteger(scoreHome) || !Number.isInteger(scoreAway) || scoreHome < 0 || scoreAway < 0) {
+    return;
+  }
+
+  manualResults[resultKey] = { scoreHome, scoreAway };
+  saveManualResults();
+  matches = matches.map((item) => getManualResultKey(item) === resultKey
+    ? { ...item, scoreHome, scoreAway, confirmed: true, manual: true }
+    : item);
+  render();
+});
+
 els.navItems.forEach((item) => {
   item.addEventListener("click", () => {
     activeView = item.dataset.view;
@@ -170,6 +211,32 @@ function saveMatches() {
   return null;
 }
 
+function loadManualResults() {
+  try {
+    return JSON.parse(localStorage.getItem(manualResultsKey) || "{}");
+  } catch {
+    return {};
+  }
+}
+
+function saveManualResults() {
+  localStorage.setItem(manualResultsKey, JSON.stringify(manualResults));
+}
+
+function applyManualResults(list) {
+  return list.map((match) => {
+    const saved = manualResults[getManualResultKey(match)];
+    if (!saved) return match;
+    return {
+      ...match,
+      scoreHome: saved.scoreHome,
+      scoreAway: saved.scoreAway,
+      confirmed: true,
+      manual: true
+    };
+  });
+}
+
 function loadApiCache() {
   return null;
 }
@@ -210,7 +277,7 @@ async function syncOpenFootball() {
 
   try {
     const payload = await fetchFixturesPayload();
-    matches = normalizeFixturePayload(payload);
+    matches = applyManualResults(normalizeFixturePayload(payload));
     saveMatches();
     openFootballStatus = `${fixtureSourceLabel(payload.__source)}: ${matches.length} partidos`;
   } catch (error) {
@@ -221,13 +288,7 @@ async function syncOpenFootball() {
 }
 
 async function fetchFixturesPayload() {
-  try {
-    const apiFootballPayload = await fetchJsonWithFallback("/api/api-football/worldcup2026", "");
-    if (hasApiFootballFixtures(apiFootballPayload)) return apiFootballPayload;
-    throw new Error("API-Football no trajo partidos para este torneo.");
-  } catch {
-    return fetchJsonWithFallback("/api/openfootball/worldcup2026", "data/openfootball-worldcup2026.json");
-  }
+  return fetchJsonWithFallback("/api/openfootball/worldcup2026", "data/openfootball-worldcup2026.json");
 }
 
 function normalizeFixturePayload(payload) {
@@ -413,6 +474,10 @@ function translateTeamName(team) {
 
 function getMatchKey(match) {
   return `${match.date}|${match.home}|${match.away}|${match.round || ""}`;
+}
+
+function getManualResultKey(match) {
+  return match.externalKey || getMatchKey(match);
 }
 
 function createTeamProfiles() {
@@ -873,7 +938,13 @@ function renderTeamDetail(team) {
 }
 
 function renderMatchCard(match) {
-  const statusText = match.live ? `En vivo${match.minute ? ` · ${match.minute}` : ""}` : match.confirmed ? "Confirmado" : "Pendiente";
+  const statusText = match.live
+    ? `En vivo${match.minute ? ` · ${match.minute}` : ""}`
+    : match.manual
+      ? "Manual"
+      : match.confirmed ? "Confirmado" : "Pendiente";
+  const scoreHome = match.scoreHome ?? "";
+  const scoreAway = match.scoreAway ?? "";
   return `
     <article class="match-card">
       <div class="match-meta">
@@ -886,9 +957,15 @@ function renderMatchCard(match) {
         ${teamLine(match.home, match.scoreHome)}
         ${teamLine(match.away, match.scoreAway)}
       </div>
-      <div class="score-control" aria-label="Resultado">
-        <span class="readonly-score">${match.scoreHome ?? "-"} - ${match.scoreAway ?? "-"}</span>
-        <span class="result-status ${match.confirmed ? "confirmed" : ""} ${match.live ? "live" : ""}">${statusText}</span>
+      <div class="score-control result-editor" aria-label="Resultado">
+        <input class="score-input" data-score-home type="number" min="0" inputmode="numeric" value="${scoreHome}" aria-label="Goles de ${match.home}" />
+        <span class="score-separator">-</span>
+        <input class="score-input" data-score-away type="number" min="0" inputmode="numeric" value="${scoreAway}" aria-label="Goles de ${match.away}" />
+        <div class="result-actions">
+          <button class="result-button accept" type="button" data-save-result="${match.id}">Guardar</button>
+          <button class="result-button cancel" type="button" data-clear-result="${match.id}">Quitar</button>
+        </div>
+        <span class="result-status ${match.confirmed ? "confirmed" : ""} ${match.live ? "live" : ""} ${match.manual ? "manual" : ""}">${statusText}</span>
       </div>
     </article>
   `;
