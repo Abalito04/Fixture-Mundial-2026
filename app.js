@@ -209,9 +209,7 @@ async function syncOpenFootball() {
   renderMatches();
 
   try {
-    const response = await fetch("/api/openfootball/worldcup2026");
-    const payload = await response.json();
-    if (!response.ok) throw new Error(payload.error || "No se pudo traer OpenFootball.");
+    const payload = await fetchJsonWithFallback("/api/openfootball/worldcup2026", "data/openfootball-worldcup2026.json");
 
     matches = payload.matches.map((match, index) => normalizeOpenFootballMatch(match, index + 1));
     saveMatches();
@@ -403,10 +401,8 @@ async function syncZafronix() {
   render();
 
   try {
-    const response = await fetch("/api/zafronix/tournament2026");
-    const payload = await response.json();
-    if (!response.ok) throw new Error(payload.error || "No se pudo traer Zafronix.");
-    const source = response.headers.get("X-Data-Source");
+    const payload = await fetchJsonWithFallback("/api/zafronix/tournament2026", "data/zafronix-tournament2026.json");
+    const source = payload.__source;
 
     const profiles = {};
     (payload.teams || []).forEach((team) => {
@@ -437,6 +433,20 @@ async function syncZafronix() {
   }
 
   render();
+}
+
+async function fetchJsonWithFallback(primaryUrl, fallbackUrl) {
+  try {
+    const response = await fetch(primaryUrl);
+    const payload = await response.json();
+    if (!response.ok) throw new Error(payload.error || "No se pudo traer datos.");
+    return { ...payload, __source: response.headers.get("X-Data-Source") || "api" };
+  } catch (primaryError) {
+    const fallbackResponse = await fetch(fallbackUrl);
+    const payload = await fallbackResponse.json();
+    if (!fallbackResponse.ok) throw primaryError;
+    return { ...payload, __source: "local" };
+  }
 }
 
 function translatePosition(position) {
