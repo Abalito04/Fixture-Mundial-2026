@@ -1140,9 +1140,9 @@ function createKnockoutResolver(knockoutMatches) {
 function createGroupSeedMap() {
   const seeds = new Map();
   worldCupGroups.forEach((group) => {
+    if (!isGroupComplete(group)) return;
     const letter = getGroupLetter(group);
     const rows = computeStandings(group);
-    if (!rows.some((row) => row.played > 0)) return;
     rows.slice(0, 3).forEach((row, index) => {
       seeds.set(`${index + 1}${letter}`, row.team);
     });
@@ -1151,6 +1151,7 @@ function createGroupSeedMap() {
 }
 
 function getQualifiedThirds() {
+  if (!isGroupStageComplete()) return [];
   return worldCupGroups
     .map((group) => ({
       ...computeStandings(group)[2],
@@ -1160,6 +1161,17 @@ function getQualifiedThirds() {
     .filter((row) => row.team && row.played > 0)
     .sort(compareTotalStandingsRows)
     .slice(0, 8);
+}
+
+function isGroupComplete(group) {
+  const groupMatches = matches.filter((match) => match.group === group);
+  return groupMatches.length > 0 && groupMatches.every((match) => (
+    match.confirmed && match.scoreHome !== null && match.scoreAway !== null
+  ));
+}
+
+function isGroupStageComplete() {
+  return worldCupGroups.every(isGroupComplete);
 }
 
 function getGroupLetter(group) {
