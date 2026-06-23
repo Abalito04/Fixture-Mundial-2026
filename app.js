@@ -37,6 +37,56 @@ const flagFallbacks = {
   Inglaterra: "https://flagcdn.com/w160/gb-eng.png",
   Escocia: "https://flagcdn.com/w160/gb-sct.png"
 };
+const fifaRankings = {
+  Argentina: 1,
+  Espana: 2,
+  Francia: 3,
+  Inglaterra: 4,
+  Portugal: 5,
+  Brasil: 6,
+  Marruecos: 7,
+  "Paises Bajos": 8,
+  Belgica: 9,
+  Alemania: 10,
+  Croacia: 11,
+  Colombia: 13,
+  Mexico: 14,
+  Senegal: 15,
+  Uruguay: 16,
+  "Estados Unidos": 17,
+  Japon: 18,
+  Suiza: 19,
+  Iran: 20,
+  Turquia: 22,
+  Ecuador: 23,
+  Austria: 24,
+  "Corea del Sur": 25,
+  Australia: 27,
+  Argelia: 28,
+  Egipto: 29,
+  Canada: 30,
+  Noruega: 31,
+  "Costa de Marfil": 33,
+  Panama: 34,
+  Suecia: 38,
+  "Rep. Checa": 40,
+  Paraguay: 41,
+  Escocia: 42,
+  Tunez: 45,
+  "RD Congo": 46,
+  Uzbekistan: 50,
+  Qatar: 56,
+  Irak: 57,
+  Sudafrica: 60,
+  "Arabia Saudita": 61,
+  Jordania: 63,
+  "Bosnia y Herzegovina": 64,
+  "Cabo Verde": 67,
+  Ghana: 73,
+  Curazao: 82,
+  Haiti: 83,
+  "Nueva Zelanda": 85
+};
 let apiStatus = "Sin sincronizar";
 let openFootballStatus = "Fixture local";
 let zafronixStatus = "Planteles sin sincronizar";
@@ -1337,7 +1387,15 @@ function compareTiedRows(a, b, headToHead) {
 }
 
 function compareTotalStandingsRows(a, b) {
-  return b.points - a.points || b.goalDiff - a.goalDiff || b.goalsFor - a.goalsFor || a.team.localeCompare(b.team);
+  return b.points - a.points
+    || b.goalDiff - a.goalDiff
+    || b.goalsFor - a.goalsFor
+    || getFifaRanking(a.team) - getFifaRanking(b.team)
+    || a.team.localeCompare(b.team);
+}
+
+function getFifaRanking(team) {
+  return fifaRankings[team] || 999;
 }
 
 function ensureTeam(table, team) {
