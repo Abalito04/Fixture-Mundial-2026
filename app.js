@@ -1158,7 +1158,7 @@ function getQualifiedThirds() {
       groupLetter: getGroupLetter(group)
     }))
     .filter((row) => row.team && row.played > 0)
-    .sort(compareStandingsRows)
+    .sort(compareTotalStandingsRows)
     .slice(0, 8);
 }
 
@@ -1200,18 +1200,60 @@ function renderStandings() {
 function computeStandings(group) {
   const table = new Map();
   (groupTeams[group] || []).forEach((team) => ensureTeam(table, team));
+  const groupMatches = matches.filter((match) => match.group === group);
 
-  matches.filter((match) => match.group === group).forEach((match) => {
+  groupMatches.forEach((match) => {
     ensureTeam(table, match.home);
     ensureTeam(table, match.away);
     if (!match.confirmed || match.scoreHome === null || match.scoreAway === null) return;
     applyResult(table.get(match.home), match.scoreHome, match.scoreAway);
     applyResult(table.get(match.away), match.scoreAway, match.scoreHome);
   });
-  return [...table.values()].sort(compareStandingsRows);
+  return sortGroupStandings([...table.values()], groupMatches);
 }
 
-function compareStandingsRows(a, b) {
+function sortGroupStandings(rows, groupMatches) {
+  const pointGroups = new Map();
+  rows.forEach((row) => {
+    const tiedRows = pointGroups.get(row.points) || [];
+    tiedRows.push(row);
+    pointGroups.set(row.points, tiedRows);
+  });
+
+  return [...pointGroups.keys()]
+    .sort((a, b) => b - a)
+    .flatMap((points) => {
+      const tiedRows = pointGroups.get(points);
+      if (tiedRows.length === 1) return tiedRows;
+      const headToHead = computeHeadToHeadStats(tiedRows, groupMatches);
+      return tiedRows.sort((a, b) => compareTiedRows(a, b, headToHead));
+    });
+}
+
+function computeHeadToHeadStats(tiedRows, groupMatches) {
+  const tiedTeams = new Set(tiedRows.map((row) => row.team));
+  const stats = new Map(tiedRows.map((row) => [row.team, createEmptyTeamRow(row.team)]));
+
+  groupMatches.forEach((match) => {
+    if (!match.confirmed || match.scoreHome === null || match.scoreAway === null) return;
+    if (!tiedTeams.has(match.home) || !tiedTeams.has(match.away)) return;
+    applyResult(stats.get(match.home), match.scoreHome, match.scoreAway);
+    applyResult(stats.get(match.away), match.scoreAway, match.scoreHome);
+  });
+
+  return stats;
+}
+
+function compareTiedRows(a, b, headToHead) {
+  const h2hA = headToHead.get(a.team);
+  const h2hB = headToHead.get(b.team);
+  return h2hB.points - h2hA.points
+    || h2hB.goalDiff - h2hA.goalDiff
+    || h2hB.goalsFor - h2hA.goalsFor
+    || compareTotalStandingsRows(a, b);
+}
+
+function compareTotalStandingsRows(a, b) {
   return b.points - a.points || b.goalDiff - a.goalDiff || b.goalsFor - a.goalsFor || a.team.localeCompare(b.team);
 }
 
