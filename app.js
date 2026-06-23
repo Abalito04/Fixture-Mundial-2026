@@ -1140,14 +1140,85 @@ function createKnockoutResolver(knockoutMatches) {
 function createGroupSeedMap() {
   const seeds = new Map();
   worldCupGroups.forEach((group) => {
-    if (!isGroupComplete(group)) return;
     const letter = getGroupLetter(group);
     const rows = computeStandings(group);
-    rows.slice(0, 3).forEach((row, index) => {
-      seeds.set(`${index + 1}${letter}`, row.team);
+    if (isGroupComplete(group)) {
+      rows.slice(0, 3).forEach((row, index) => {
+        seeds.set(`${index + 1}${letter}`, row.team);
+      });
+      return;
+    }
+
+    getLockedGroupSeeds(group, rows).forEach((row, position) => {
+      seeds.set(`${position}${letter}`, row.team);
     });
   });
   return seeds;
+}
+
+function getLockedGroupSeeds(group, rows) {
+  const locked = new Map();
+  const first = rows[0];
+  const second = rows[1];
+  if (!first || !second) return locked;
+
+  if (isLockedFirst(first, rows, group)) {
+    locked.set(1, first);
+  }
+  if (isLockedSecond(first, second, rows, group)) {
+    locked.set(2, second);
+  }
+  return locked;
+}
+
+function isLockedFirst(candidate, rows, group) {
+  return rows
+    .filter((row) => row.team !== candidate.team)
+    .every((row) => !canFinishAbove(row, candidate, group));
+}
+
+function isLockedSecond(first, candidate, rows, group) {
+  if (!isGuaranteedAbove(first, candidate, group)) return false;
+  return rows
+    .filter((row) => row.team !== first.team && row.team !== candidate.team)
+    .every((row) => !canFinishAbove(row, candidate, group));
+}
+
+function canFinishAbove(chaser, target, group) {
+  const maxPoints = getMaxPossiblePoints(chaser, group);
+  if (maxPoints > target.points) return true;
+  if (maxPoints < target.points) return false;
+  return !hasHeadToHeadAdvantage(target.team, chaser.team, group);
+}
+
+function isGuaranteedAbove(leader, target, group) {
+  const targetMaxPoints = getMaxPossiblePoints(target, group);
+  if (leader.points > targetMaxPoints) return true;
+  if (leader.points < targetMaxPoints) return false;
+  return hasHeadToHeadAdvantage(leader.team, target.team, group);
+}
+
+function getMaxPossiblePoints(row, group) {
+  const remainingMatches = matches.filter((match) => (
+    match.group === group
+    && (match.home === row.team || match.away === row.team)
+    && (!match.confirmed || match.scoreHome === null || match.scoreAway === null)
+  ));
+  return row.points + remainingMatches.length * 3;
+}
+
+function hasHeadToHeadAdvantage(team, opponent, group) {
+  const directMatch = matches.find((match) => (
+    match.group === group
+    && match.confirmed
+    && match.scoreHome !== null
+    && match.scoreAway !== null
+    && ((match.home === team && match.away === opponent) || (match.home === opponent && match.away === team))
+  ));
+  if (!directMatch || directMatch.scoreHome === directMatch.scoreAway) return false;
+  return directMatch.home === team
+    ? directMatch.scoreHome > directMatch.scoreAway
+    : directMatch.scoreAway > directMatch.scoreHome;
 }
 
 function getQualifiedThirds() {
