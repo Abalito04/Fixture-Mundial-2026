@@ -319,6 +319,7 @@ function normalizeOpenFootballMatch(match, id, previousByKey) {
   const score = match.score?.ft || null;
   return {
     id,
+    num: match.num || id,
     externalKey: `${match.date}|${match.team1}|${match.team2}|${match.round}`,
     round: translateRound(match.round),
     group,
@@ -344,6 +345,7 @@ function normalizeApiFootballFixture(item, id) {
   const round = translateApiFootballRound(item.league?.round || "");
   return {
     id: item.fixture?.id || id,
+    num: item.fixture?.id || id,
     externalKey: String(item.fixture?.id || `${item.fixture?.date}|${home}|${away}`),
     round,
     group: getSharedGroup(home, away) || "Eliminatorias",
@@ -1003,6 +1005,7 @@ function renderKnockoutFullView() {
   ];
   const thirdPlace = knockoutMatches.filter((match) => match.round === "Tercer puesto");
   const finalMatches = knockoutMatches.filter((match) => match.round === "Final");
+  const bracketResolver = createKnockoutResolver(knockoutMatches);
 
   els.matchCount.textContent = `${knockoutMatches.length} ${knockoutMatches.length === 1 ? "cruce" : "cruces"}`;
   els.matchList.innerHTML = `
@@ -1015,24 +1018,24 @@ function renderKnockoutFullView() {
       </div>
       <div class="bracket-scroll">
         <div class="bracket-grid">
-          ${rounds.map(([roundKey, label]) => renderBracketRound(label, knockoutMatches.filter((match) => match.round === roundKey))).join("")}
-          ${renderFinalBracketColumn(finalMatches, thirdPlace)}
+          ${rounds.map(([roundKey, label]) => renderBracketRound(label, knockoutMatches.filter((match) => match.round === roundKey), bracketResolver)).join("")}
+          ${renderFinalBracketColumn(finalMatches, thirdPlace, bracketResolver)}
         </div>
       </div>
     </div>
   `;
 }
 
-function renderFinalBracketColumn(finalMatches, thirdPlaceMatches) {
+function renderFinalBracketColumn(finalMatches, thirdPlaceMatches, bracketResolver) {
   return `
     <section class="final-stack">
-      ${renderBracketRound("Final", finalMatches)}
-      ${thirdPlaceMatches.length ? renderBracketRound("Tercer puesto", thirdPlaceMatches) : ""}
+      ${renderBracketRound("Final", finalMatches, bracketResolver)}
+      ${thirdPlaceMatches.length ? renderBracketRound("Tercer puesto", thirdPlaceMatches, bracketResolver) : ""}
     </section>
   `;
 }
 
-function renderBracketRound(label, roundMatches) {
+function renderBracketRound(label, roundMatches, bracketResolver) {
   return `
     <section class="bracket-round">
       <div class="bracket-round-head">
@@ -1040,13 +1043,13 @@ function renderBracketRound(label, roundMatches) {
         <span>${roundMatches.length} ${roundMatches.length === 1 ? "partido" : "partidos"}</span>
       </div>
       <div class="bracket-match-list">
-        ${roundMatches.map(renderBracketMatch).join("")}
+        ${roundMatches.map((match) => renderBracketMatch(match, bracketResolver)).join("")}
       </div>
     </section>
   `;
 }
 
-function renderBracketMatch(match) {
+function renderBracketMatch(match, bracketResolver) {
   return `
     <article class="bracket-match">
       <div class="bracket-match-meta">
@@ -1054,11 +1057,11 @@ function renderBracketMatch(match) {
         <strong>${match.time || "Hora a confirmar"}</strong>
       </div>
       <div class="bracket-team">
-        ${renderBracketTeam(match.home)}
+        ${renderBracketTeam(match.home, bracketResolver)}
         <span class="bracket-score">${match.scoreHome ?? "-"}</span>
       </div>
       <div class="bracket-team">
-        ${renderBracketTeam(match.away)}
+        ${renderBracketTeam(match.away, bracketResolver)}
         <span class="bracket-score">${match.scoreAway ?? "-"}</span>
       </div>
       <div class="bracket-venue">${match.venue}</div>
@@ -1066,14 +1069,101 @@ function renderBracketMatch(match) {
   `;
 }
 
-function renderBracketTeam(team) {
+function renderBracketTeam(team, bracketResolver) {
+  const resolvedTeam = bracketResolver?.resolve(team) || team;
   const isPlaceholder = /^[123][A-L](\/|$)|^W\d+|^L\d+/.test(team);
+  const resolved = resolvedTeam !== team;
   return `
-    <span class="bracket-team-name ${isPlaceholder ? "placeholder" : ""}">
-      ${isPlaceholder ? `<span class="seed-chip">${team}</span>` : teamSwatch(team)}
-      <span>${describeSeed(team)}</span>
+    <span class="bracket-team-name ${isPlaceholder && !resolved ? "placeholder" : ""}">
+      ${resolved ? teamSwatch(resolvedTeam) : isPlaceholder ? `<span class="seed-chip">${team}</span>` : teamSwatch(team)}
+      <span>${resolved ? resolvedTeam : describeSeed(team)}</span>
     </span>
   `;
+}
+
+function createKnockoutResolver(knockoutMatches) {
+  const seedMap = createGroupSeedMap();
+  const matchesByNumber = new Map(knockoutMatches.map((match) => [String(match.num || match.id), match]));
+  const assignedThirdGroups = new Set();
+  const thirdSeedCache = new Map();
+  const resolving = new Set();
+
+  function resolve(seed) {
+    if (seedMap.has(seed)) return seedMap.get(seed);
+
+    const thirdSeed = seed.match(/^3([A-L](?:\/[A-L])+?)$/);
+    if (thirdSeed) {
+      return resolveBestThird(seed, thirdSeed[1].split("/"));
+    }
+
+    const matchSeed = seed.match(/^([WL])(\d+)$/);
+    if (matchSeed) {
+      return resolveMatchSeed(matchSeed[1], matchSeed[2]);
+    }
+
+    return seed;
+  }
+
+  function resolveBestThird(seed, allowedLetters) {
+    if (thirdSeedCache.has(seed)) return thirdSeedCache.get(seed);
+    const selected = getQualifiedThirds()
+      .filter((row) => allowedLetters.includes(row.groupLetter) && !assignedThirdGroups.has(row.groupLetter))
+      [0];
+
+    if (!selected) return seed;
+    assignedThirdGroups.add(selected.groupLetter);
+    thirdSeedCache.set(seed, selected.team);
+    return selected.team;
+  }
+
+  function resolveMatchSeed(kind, number) {
+    const key = `${kind}${number}`;
+    if (resolving.has(key)) return key;
+    const match = matchesByNumber.get(number);
+    if (!match || !match.confirmed || match.scoreHome === null || match.scoreAway === null || match.scoreHome === match.scoreAway) {
+      return key;
+    }
+
+    resolving.add(key);
+    const home = resolve(match.home);
+    const away = resolve(match.away);
+    resolving.delete(key);
+
+    const homeWon = match.scoreHome > match.scoreAway;
+    if (kind === "W") return homeWon ? home : away;
+    return homeWon ? away : home;
+  }
+
+  return { resolve };
+}
+
+function createGroupSeedMap() {
+  const seeds = new Map();
+  worldCupGroups.forEach((group) => {
+    const letter = getGroupLetter(group);
+    const rows = computeStandings(group);
+    if (!rows.some((row) => row.played > 0)) return;
+    rows.slice(0, 3).forEach((row, index) => {
+      seeds.set(`${index + 1}${letter}`, row.team);
+    });
+  });
+  return seeds;
+}
+
+function getQualifiedThirds() {
+  return worldCupGroups
+    .map((group) => ({
+      ...computeStandings(group)[2],
+      group,
+      groupLetter: getGroupLetter(group)
+    }))
+    .filter((row) => row.team && row.played > 0)
+    .sort(compareStandingsRows)
+    .slice(0, 8);
+}
+
+function getGroupLetter(group) {
+  return group.replace("Grupo ", "").trim();
 }
 
 function describeSeed(seed) {
@@ -1118,7 +1208,11 @@ function computeStandings(group) {
     applyResult(table.get(match.home), match.scoreHome, match.scoreAway);
     applyResult(table.get(match.away), match.scoreAway, match.scoreHome);
   });
-  return [...table.values()].sort((a, b) => b.points - a.points || b.goalDiff - a.goalDiff || b.goalsFor - a.goalsFor);
+  return [...table.values()].sort(compareStandingsRows);
+}
+
+function compareStandingsRows(a, b) {
+  return b.points - a.points || b.goalDiff - a.goalDiff || b.goalsFor - a.goalsFor || a.team.localeCompare(b.team);
 }
 
 function ensureTeam(table, team) {
