@@ -1181,8 +1181,7 @@ function renderBracketTeam(team, bracketResolver) {
 function createKnockoutResolver(knockoutMatches) {
   const seedMap = createGroupSeedMap();
   const matchesByNumber = new Map(knockoutMatches.map((match) => [String(match.num || match.id), match]));
-  const assignedThirdGroups = new Set();
-  const thirdSeedCache = new Map();
+  const qualifiedThirdMap = createQualifiedThirdMap();
   const resolving = new Set();
 
   function resolve(seed) {
@@ -1202,15 +1201,9 @@ function createKnockoutResolver(knockoutMatches) {
   }
 
   function resolveBestThird(seed, allowedLetters) {
-    if (thirdSeedCache.has(seed)) return thirdSeedCache.get(seed);
-    const selected = getQualifiedThirds()
-      .filter((row) => allowedLetters.includes(row.groupLetter) && !assignedThirdGroups.has(row.groupLetter))
-      [0];
-
-    if (!selected) return seed;
-    assignedThirdGroups.add(selected.groupLetter);
-    thirdSeedCache.set(seed, selected.team);
-    return selected.team;
+    const winnerGroup = getWinnerGroupForThirdSeed(allowedLetters);
+    const selected = winnerGroup ? qualifiedThirdMap.get(winnerGroup) : null;
+    return selected?.team || seed;
   }
 
   function resolveMatchSeed(kind, number) {
@@ -1232,6 +1225,37 @@ function createKnockoutResolver(knockoutMatches) {
   }
 
   return { resolve };
+}
+
+function createQualifiedThirdMap() {
+  const qualifiedThirds = getQualifiedThirds();
+  if (qualifiedThirds.length !== 8) return new Map();
+
+  const combinationKey = qualifiedThirds
+    .map((row) => row.groupLetter)
+    .sort()
+    .join("");
+  const assignments = window.thirdPlaceCombinations?.[combinationKey];
+  if (!assignments) return new Map();
+
+  const thirdsByGroup = new Map(qualifiedThirds.map((row) => [row.groupLetter, row]));
+  return new Map(Object.entries(assignments).map(([winnerGroup, thirdGroup]) => (
+    [winnerGroup, thirdsByGroup.get(thirdGroup)]
+  )));
+}
+
+function getWinnerGroupForThirdSeed(allowedLetters) {
+  const seedKey = [...allowedLetters].sort().join("");
+  return {
+    ABCDF: "E",
+    CDFGH: "I",
+    CEFHI: "A",
+    EHIJK: "L",
+    BEFIJ: "D",
+    AEHIJ: "G",
+    EFGIJ: "B",
+    DEIJL: "K"
+  }[seedKey];
 }
 
 function createGroupSeedMap() {
