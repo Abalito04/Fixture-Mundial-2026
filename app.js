@@ -1096,15 +1096,27 @@ function renderKnockoutFullView() {
 }
 
 function renderBracketSide(roundMatches, bracketResolver, side) {
-  const takeHalf = (items) => {
-    const middle = Math.ceil(items.length / 2);
-    return side === "left" ? items.slice(0, middle) : items.slice(middle);
-  };
+  const matchOrder = side === "left"
+    ? {
+        round32: [74, 77, 73, 75, 83, 84, 81, 82],
+        round16: [89, 90, 93, 94],
+        quarterfinals: [97, 98],
+        semifinals: [101]
+      }
+    : {
+        round32: [76, 78, 79, 80, 86, 88, 85, 87],
+        round16: [91, 92, 95, 96],
+        quarterfinals: [99, 100],
+        semifinals: [102]
+      };
+  const orderMatches = (items, numbers) => numbers
+    .map((number) => items.find((match) => Number(match.num || match.id) === number))
+    .filter(Boolean);
   const rounds = [
-    ["16vos", takeHalf(roundMatches.round32)],
-    ["8vos", takeHalf(roundMatches.round16)],
-    ["4tos", takeHalf(roundMatches.quarterfinals)],
-    ["Semis", takeHalf(roundMatches.semifinals)]
+    ["16vos", orderMatches(roundMatches.round32, matchOrder.round32)],
+    ["8vos", orderMatches(roundMatches.round16, matchOrder.round16)],
+    ["4tos", orderMatches(roundMatches.quarterfinals, matchOrder.quarterfinals)],
+    ["Semis", orderMatches(roundMatches.semifinals, matchOrder.semifinals)]
   ];
   if (side === "right") rounds.reverse();
 
