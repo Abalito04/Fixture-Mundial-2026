@@ -885,6 +885,44 @@ body[data-view="grupos"] .right-rail {
   background: #fafcfb;
 }
 
+.bracket-score-input {
+  width: 24px;
+  padding: 0;
+  color: var(--primary);
+  font: inherit;
+  text-align: center;
+  appearance: textfield;
+}
+
+.bracket-score-input::-webkit-inner-spin-button,
+.bracket-score-input::-webkit-outer-spin-button {
+  margin: 0;
+  appearance: none;
+}
+
+.bracket-score-input:focus {
+  border-color: var(--secondary);
+  outline: 2px solid rgba(60, 172, 59, 0.2);
+}
+
+.bracket-score-input:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.bracket-result-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 4px;
+  padding-top: 2px;
+}
+
+.bracket-result-actions .result-button {
+  min-height: 22px;
+  padding: 2px 6px;
+  font-size: 9px;
+}
+
 .final-stack {
   display: grid;
   gap: 24px;

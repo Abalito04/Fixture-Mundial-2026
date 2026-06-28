@@ -193,7 +193,7 @@ els.matchList.addEventListener("click", (event) => {
     return;
   }
 
-  const card = actionButton.closest(".match-card");
+  const card = actionButton.closest(".match-card, .bracket-match");
   const homeInput = card?.querySelector("[data-score-home]");
   const awayInput = card?.querySelector("[data-score-away]");
   const scoreHome = Number(homeInput?.value);
@@ -759,7 +759,14 @@ function renderMatches() {
     return;
   }
 
-  const list = filteredMatches();
+  const knockoutResolver = createKnockoutResolver(matches.filter((match) => match.group === "Eliminatorias"));
+  const list = filteredMatches().map((match) => match.group === "Eliminatorias"
+    ? {
+        ...match,
+        home: knockoutResolver.resolve(match.home),
+        away: knockoutResolver.resolve(match.away)
+      }
+    : match);
   els.matchCount.textContent = `${list.length} ${list.length === 1 ? "partido" : "partidos"}`;
   if (!list.length) {
     const emptyText = activeFilter === "Hoy" ? "No hay partidos programados para hoy." : "No hay partidos para ese filtro.";
@@ -1147,6 +1154,12 @@ function renderBracketRound(label, roundMatches, bracketResolver) {
 }
 
 function renderBracketMatch(match, bracketResolver) {
+  const home = bracketResolver.resolve(match.home);
+  const away = bracketResolver.resolve(match.away);
+  const homePending = home === match.home && isKnockoutPlaceholder(match.home);
+  const awayPending = away === match.away && isKnockoutPlaceholder(match.away);
+  const resultDisabled = homePending || awayPending;
+  const disabledAttribute = resultDisabled ? "disabled" : "";
   return `
     <article class="bracket-match">
       <div class="bracket-match-meta">
@@ -1155,20 +1168,28 @@ function renderBracketMatch(match, bracketResolver) {
       </div>
       <div class="bracket-team">
         ${renderBracketTeam(match.home, bracketResolver)}
-        <span class="bracket-score">${match.scoreHome ?? "-"}</span>
+        <input class="bracket-score bracket-score-input" data-score-home type="number" min="0" inputmode="numeric" value="${match.scoreHome ?? ""}" aria-label="Goles de ${home}" ${disabledAttribute} />
       </div>
       <div class="bracket-team">
         ${renderBracketTeam(match.away, bracketResolver)}
-        <span class="bracket-score">${match.scoreAway ?? "-"}</span>
+        <input class="bracket-score bracket-score-input" data-score-away type="number" min="0" inputmode="numeric" value="${match.scoreAway ?? ""}" aria-label="Goles de ${away}" ${disabledAttribute} />
+      </div>
+      <div class="bracket-result-actions">
+        <button class="result-button accept" type="button" data-save-result="${match.id}" ${disabledAttribute}>Guardar</button>
+        <button class="result-button cancel" type="button" data-clear-result="${match.id}" ${disabledAttribute}>Quitar</button>
       </div>
       <div class="bracket-venue">${match.venue}</div>
     </article>
   `;
 }
 
+function isKnockoutPlaceholder(team) {
+  return /^[123][A-L](\/|$)|^W\d+|^L\d+/.test(team);
+}
+
 function renderBracketTeam(team, bracketResolver) {
   const resolvedTeam = bracketResolver?.resolve(team) || team;
-  const isPlaceholder = /^[123][A-L](\/|$)|^W\d+|^L\d+/.test(team);
+  const isPlaceholder = isKnockoutPlaceholder(team);
   const resolved = resolvedTeam !== team;
   return `
     <span class="bracket-team-name ${isPlaceholder && !resolved ? "placeholder" : ""}">
