@@ -1047,12 +1047,12 @@ function renderKnockoutFullView() {
   const knockoutMatches = matches
     .filter((match) => match.group === "Eliminatorias")
     .sort((a, b) => `${a.date}${a.time}`.localeCompare(`${b.date}${b.time}`));
-  const rounds = [
-    ["Dieciseisavos", "Dieciseisavos"],
-    ["Octavos", "Octavos"],
-    ["Cuartos", "Cuartos"],
-    ["Semifinal", "Semifinales"]
-  ];
+  const roundMatches = {
+    round32: knockoutMatches.filter((match) => match.round === "Dieciseisavos"),
+    round16: knockoutMatches.filter((match) => match.round === "Octavos"),
+    quarterfinals: knockoutMatches.filter((match) => match.round === "Cuartos"),
+    semifinals: knockoutMatches.filter((match) => match.round === "Semifinal")
+  };
   const thirdPlace = knockoutMatches.filter((match) => match.round === "Tercer puesto");
   const finalMatches = knockoutMatches.filter((match) => match.round === "Final");
   const bracketResolver = createKnockoutResolver(knockoutMatches);
@@ -1078,18 +1078,54 @@ function renderKnockoutFullView() {
         </div>
       ` : ""}
       <div class="bracket-scroll">
-        <div class="bracket-grid">
-          ${rounds.map(([roundKey, label]) => renderBracketRound(label, knockoutMatches.filter((match) => match.round === roundKey), bracketResolver)).join("")}
+        <div class="bracket-grid bracket-tree">
+          ${renderBracketSide(roundMatches, bracketResolver, "left")}
           ${renderFinalBracketColumn(finalMatches, thirdPlace, bracketResolver)}
+          ${renderBracketSide(roundMatches, bracketResolver, "right")}
         </div>
       </div>
     </div>
   `;
 }
 
+function renderBracketSide(roundMatches, bracketResolver, side) {
+  const takeHalf = (items) => {
+    const middle = Math.ceil(items.length / 2);
+    return side === "left" ? items.slice(0, middle) : items.slice(middle);
+  };
+  const rounds = [
+    ["16vos", takeHalf(roundMatches.round32)],
+    ["8vos", takeHalf(roundMatches.round16)],
+    ["4tos", takeHalf(roundMatches.quarterfinals)],
+    ["Semis", takeHalf(roundMatches.semifinals)]
+  ];
+  if (side === "right") rounds.reverse();
+
+  return `
+    <div class="bracket-branch bracket-branch-${side}">
+      ${rounds.map(([label, games]) => renderBracketTreeRound(label, games, bracketResolver, side)).join("")}
+    </div>
+  `;
+}
+
+function renderBracketTreeRound(label, roundMatches, bracketResolver, side) {
+  return `
+    <section class="bracket-round bracket-tree-round bracket-tree-round-${side}" style="--match-count: ${Math.max(roundMatches.length, 1)}">
+      <div class="bracket-round-head"><h3>${label}</h3></div>
+      <div class="bracket-match-list">
+        ${roundMatches.map((match, index) => `
+          <div class="bracket-slot ${index % 2 === 0 ? "pair-start" : "pair-end"}">
+            ${renderBracketMatch(match, bracketResolver)}
+          </div>
+        `).join("")}
+      </div>
+    </section>
+  `;
+}
+
 function renderFinalBracketColumn(finalMatches, thirdPlaceMatches, bracketResolver) {
   return `
-    <section class="final-stack">
+    <section class="final-stack bracket-center">
       ${renderBracketRound("Final", finalMatches, bracketResolver)}
       ${thirdPlaceMatches.length ? renderBracketRound("Tercer puesto", thirdPlaceMatches, bracketResolver) : ""}
     </section>

@@ -669,10 +669,116 @@ body[data-view="grupos"] .right-rail {
 
 .bracket-grid {
   display: grid;
-  grid-template-columns: repeat(5, minmax(250px, 1fr));
-  gap: 14px;
-  min-width: 1320px;
-  align-items: start;
+  gap: 0;
+  min-width: 820px;
+  align-items: stretch;
+}
+
+.bracket-tree {
+  grid-template-columns: minmax(0, 1fr) 126px minmax(0, 1fr);
+  min-height: 850px;
+  padding: 0 4px 8px;
+}
+
+.bracket-branch {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.bracket-tree-round {
+  min-width: 0;
+}
+
+.bracket-tree-round .bracket-round-head {
+  justify-content: center;
+  min-height: 34px;
+  padding: 0 4px;
+  color: var(--primary);
+  border-bottom: 1px solid rgba(42, 57, 141, 0.2);
+  border-radius: 0;
+  background: transparent;
+}
+
+.bracket-tree-round .bracket-round-head h3 {
+  font-size: 12px;
+  text-transform: uppercase;
+}
+
+.bracket-tree-round .bracket-match-list {
+  display: grid;
+  grid-template-rows: repeat(var(--match-count), minmax(0, 1fr));
+  height: 810px;
+  gap: 0;
+}
+
+.bracket-slot {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-height: 0;
+}
+
+.bracket-slot .bracket-match {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+}
+
+.bracket-tree-round-left .bracket-slot .bracket-match::after,
+.bracket-tree-round-right .bracket-slot .bracket-match::before,
+.bracket-tree-round-left .pair-start::after,
+.bracket-tree-round-right .pair-start::after,
+.bracket-tree-round-left .pair-start::before,
+.bracket-tree-round-right .pair-start::before {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+  background: rgba(42, 57, 141, 0.42);
+}
+
+.bracket-tree-round-left .bracket-slot .bracket-match::after {
+  left: 100%;
+  top: 50%;
+  width: 10px;
+  height: 1px;
+}
+
+.bracket-tree-round-right .bracket-slot .bracket-match::before {
+  right: 100%;
+  top: 50%;
+  width: 10px;
+  height: 1px;
+}
+
+.bracket-tree-round-left .pair-start::after,
+.bracket-tree-round-right .pair-start::after {
+  top: 50%;
+  width: 1px;
+  height: 100%;
+}
+
+.bracket-tree-round-left .pair-start::after {
+  right: -10px;
+}
+
+.bracket-tree-round-right .pair-start::after {
+  left: -10px;
+}
+
+.bracket-tree-round-left .pair-start::before,
+.bracket-tree-round-right .pair-start::before {
+  top: calc(150% - 1px);
+  width: 10px;
+  height: 1px;
+}
+
+.bracket-tree-round-left .pair-start::before {
+  right: -20px;
+}
+
+.bracket-tree-round-right .pair-start::before {
+  left: -20px;
 }
 
 .bracket-round {
@@ -709,9 +815,9 @@ body[data-view="grupos"] .right-rail {
 
 .bracket-match {
   display: grid;
-  gap: 8px;
-  min-height: 126px;
-  padding: 12px;
+  gap: 3px;
+  min-height: 76px;
+  padding: 7px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: #fff;
@@ -724,7 +830,7 @@ body[data-view="grupos"] .right-rail {
   justify-content: space-between;
   gap: 8px;
   color: var(--muted);
-  font-size: 11px;
+  font-size: 9px;
   font-weight: 800;
 }
 
@@ -734,18 +840,18 @@ body[data-view="grupos"] .right-rail {
 
 .bracket-team {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 32px;
-  gap: 8px;
+  grid-template-columns: minmax(0, 1fr) 24px;
+  gap: 4px;
   align-items: center;
-  min-height: 30px;
+  min-height: 23px;
 }
 
 .bracket-team-name {
   display: flex;
   align-items: center;
   min-width: 0;
-  gap: 8px;
-  font-size: 13px;
+  gap: 5px;
+  font-size: 10px;
   font-weight: 850;
 }
 
@@ -772,7 +878,7 @@ body[data-view="grupos"] .right-rail {
 .bracket-score {
   display: grid;
   place-items: center;
-  min-height: 28px;
+  min-height: 22px;
   border: 1px solid var(--line);
   border-radius: 7px;
   font-weight: 900;
@@ -781,7 +887,29 @@ body[data-view="grupos"] .right-rail {
 
 .final-stack {
   display: grid;
-  gap: 14px;
+  gap: 24px;
+  grid-template-rows: minmax(0, 1fr) auto;
+  padding: 0 8px 24px;
+}
+
+.bracket-center > .bracket-round:first-child {
+  display: grid;
+  grid-template-rows: 34px minmax(0, 1fr);
+}
+
+.bracket-center .bracket-round-head {
+  justify-content: center;
+  background: var(--primary);
+}
+
+.bracket-center .bracket-round-head span {
+  display: none;
+}
+
+.bracket-center .bracket-match-list {
+  display: grid;
+  align-content: center;
+  min-height: 0;
 }
 
 .rank {
@@ -1426,8 +1554,7 @@ body[data-view="grupos"] .right-rail {
   }
 
   .bracket-grid {
-    grid-template-columns: 280px 280px 280px 280px 280px;
-    min-width: 1460px;
+    min-width: 820px;
   }
 }
 
