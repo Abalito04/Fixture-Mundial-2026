@@ -1681,6 +1681,42 @@ h2 {
   color: var(--muted);
 }
 
+.qualified-thirds {
+  display: grid;
+  gap: 8px;
+  padding: 10px 14px;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  background: var(--surface-soft);
+}
+
+.qualified-thirds-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.qualified-third {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface);
+  font-weight: 700;
+}
+
+.qualified-third .flag-img,
+.qualified-third .swatch {
+  flex: 0 0 auto;
+}
+
+.qualified-third small {
+  color: var(--muted);
+  font-weight: 600;
+}
+
 .right-rail {
   position: sticky;
   top: 24px;

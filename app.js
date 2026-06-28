@@ -1056,6 +1056,7 @@ function renderKnockoutFullView() {
   const thirdPlace = knockoutMatches.filter((match) => match.round === "Tercer puesto");
   const finalMatches = knockoutMatches.filter((match) => match.round === "Final");
   const bracketResolver = createKnockoutResolver(knockoutMatches);
+  const guaranteedThirds = getGuaranteedQualifiedThirds();
 
   els.matchCount.textContent = `${knockoutMatches.length} ${knockoutMatches.length === 1 ? "cruce" : "cruces"}`;
   els.matchList.innerHTML = `
@@ -1066,6 +1067,16 @@ function renderKnockoutFullView() {
           <span>Clasifican los dos primeros de cada grupo y los mejores terceros.</span>
         </div>
       </div>
+      ${guaranteedThirds.length ? `
+        <div class="qualified-thirds">
+          <strong>Mejores terceros asegurados</strong>
+          <div class="qualified-thirds-list">
+            ${guaranteedThirds.map((row) => `
+              <span class="qualified-third">${teamSwatch(row.team)} ${row.team} <small>Grupo ${row.groupLetter}</small></span>
+            `).join("")}
+          </div>
+        </div>
+      ` : ""}
       <div class="bracket-scroll">
         <div class="bracket-grid">
           ${rounds.map(([roundKey, label]) => renderBracketRound(label, knockoutMatches.filter((match) => match.round === roundKey), bracketResolver)).join("")}
@@ -1282,6 +1293,62 @@ function getQualifiedThirds() {
     .filter((row) => row.team && row.played > 0)
     .sort(compareTotalStandingsRows)
     .slice(0, 8);
+}
+
+function getGuaranteedQualifiedThirds() {
+  const completedThirds = worldCupGroups
+    .filter(isGroupComplete)
+    .map((group) => ({
+      ...computeStandings(group)[2],
+      group,
+      groupLetter: getGroupLetter(group)
+    }))
+    .filter((row) => row.team);
+
+  return completedThirds
+    .filter((candidate) => {
+      const possibleTeamsAbove = worldCupGroups
+        .filter((group) => group !== candidate.group)
+        .filter((group) => {
+          if (!isGroupComplete(group)) {
+            return getMaxPossibleThirdPoints(group) >= candidate.points;
+          }
+          const third = computeStandings(group)[2];
+          return third && compareTotalStandingsRows(third, candidate) < 0;
+        }).length;
+      return possibleTeamsAbove < 8;
+    })
+    .sort(compareTotalStandingsRows);
+}
+
+function getMaxPossibleThirdPoints(group) {
+  const teams = groupTeams[group] || [];
+  const currentRows = computeStandings(group);
+  const initialPoints = new Map(currentRows.map((row) => [row.team, row.points]));
+  const remainingMatches = matches.filter((match) => (
+    match.group === group
+    && (!match.confirmed || match.scoreHome === null || match.scoreAway === null)
+  ));
+  let maximum = 0;
+
+  function explore(index, points) {
+    if (index === remainingMatches.length) {
+      const orderedPoints = teams.map((team) => points.get(team) || 0).sort((a, b) => b - a);
+      maximum = Math.max(maximum, orderedPoints[2] || 0);
+      return;
+    }
+
+    const match = remainingMatches[index];
+    [[3, 0], [1, 1], [0, 3]].forEach(([homePoints, awayPoints]) => {
+      const next = new Map(points);
+      next.set(match.home, (next.get(match.home) || 0) + homePoints);
+      next.set(match.away, (next.get(match.away) || 0) + awayPoints);
+      explore(index + 1, next);
+    });
+  }
+
+  explore(0, initialPoints);
+  return maximum;
 }
 
 function isGroupComplete(group) {
