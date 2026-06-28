@@ -670,20 +670,20 @@ body[data-view="grupos"] .right-rail {
 .bracket-grid {
   display: grid;
   gap: 0;
-  min-width: 820px;
+  min-width: 1500px;
   align-items: stretch;
 }
 
 .bracket-tree {
-  grid-template-columns: minmax(0, 1fr) 126px minmax(0, 1fr);
-  min-height: 850px;
+  grid-template-columns: minmax(0, 1fr) 170px minmax(0, 1fr);
+  min-height: 1250px;
   padding: 0 4px 8px;
 }
 
 .bracket-branch {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 10px;
+  gap: 16px;
 }
 
 .bracket-tree-round {
@@ -708,7 +708,7 @@ body[data-view="grupos"] .right-rail {
 .bracket-tree-round .bracket-match-list {
   display: grid;
   grid-template-rows: repeat(var(--match-count), minmax(0, 1fr));
-  height: 810px;
+  height: 1200px;
   gap: 0;
 }
 
@@ -740,14 +740,14 @@ body[data-view="grupos"] .right-rail {
 .bracket-tree-round-left .bracket-slot .bracket-match::after {
   left: 100%;
   top: 50%;
-  width: 10px;
+  width: 16px;
   height: 1px;
 }
 
 .bracket-tree-round-right .bracket-slot .bracket-match::before {
   right: 100%;
   top: 50%;
-  width: 10px;
+  width: 16px;
   height: 1px;
 }
 
@@ -759,26 +759,26 @@ body[data-view="grupos"] .right-rail {
 }
 
 .bracket-tree-round-left .pair-start::after {
-  right: -10px;
+  right: -16px;
 }
 
 .bracket-tree-round-right .pair-start::after {
-  left: -10px;
+  left: -16px;
 }
 
 .bracket-tree-round-left .pair-start::before,
 .bracket-tree-round-right .pair-start::before {
   top: calc(150% - 1px);
-  width: 10px;
+  width: 16px;
   height: 1px;
 }
 
 .bracket-tree-round-left .pair-start::before {
-  right: -20px;
+  right: -32px;
 }
 
 .bracket-tree-round-right .pair-start::before {
-  left: -20px;
+  left: -32px;
 }
 
 .bracket-round {
@@ -816,8 +816,8 @@ body[data-view="grupos"] .right-rail {
 .bracket-match {
   display: grid;
   gap: 3px;
-  min-height: 76px;
-  padding: 7px;
+  min-height: 104px;
+  padding: 9px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: #fff;
@@ -851,7 +851,7 @@ body[data-view="grupos"] .right-rail {
   align-items: center;
   min-width: 0;
   gap: 5px;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 850;
 }
 
@@ -886,7 +886,7 @@ body[data-view="grupos"] .right-rail {
 }
 
 .bracket-score-input {
-  width: 24px;
+  width: 28px;
   padding: 0;
   color: var(--primary);
   font: inherit;
@@ -1592,7 +1592,7 @@ body[data-view="grupos"] .right-rail {
   }
 
   .bracket-grid {
-    min-width: 820px;
+    min-width: 1500px;
   }
 }
 
