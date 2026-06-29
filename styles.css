@@ -676,7 +676,7 @@ body[data-view="grupos"] .right-rail {
 
 .bracket-tree {
   grid-template-columns: minmax(0, 1fr) 170px minmax(0, 1fr);
-  min-height: 1250px;
+  min-height: 1410px;
   padding: 0 4px 8px;
 }
 
@@ -708,7 +708,7 @@ body[data-view="grupos"] .right-rail {
 .bracket-tree-round .bracket-match-list {
   display: grid;
   grid-template-rows: repeat(var(--match-count), minmax(0, 1fr));
-  height: 1200px;
+  height: 1360px;
   gap: 0;
 }
 
@@ -921,6 +921,48 @@ body[data-view="grupos"] .right-rail {
   min-height: 22px;
   padding: 2px 6px;
   font-size: 9px;
+}
+
+.penalty-editor {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 5px;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 850;
+}
+
+.penalty-input {
+  width: 30px;
+  min-height: 24px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 0;
+  color: var(--primary);
+  font-weight: 900;
+  text-align: center;
+  background: #fff;
+  appearance: textfield;
+}
+
+.penalty-input::-webkit-inner-spin-button,
+.penalty-input::-webkit-outer-spin-button {
+  margin: 0;
+  appearance: none;
+}
+
+.penalty-input:focus {
+  border-color: var(--secondary);
+  outline: 2px solid rgba(60, 172, 59, 0.2);
+}
+
+.bracket-result-status {
+  min-height: 0;
+  color: var(--danger);
+  font-size: 9px;
+  font-weight: 800;
 }
 
 .final-stack {

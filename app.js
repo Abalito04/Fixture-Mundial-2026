@@ -187,7 +187,7 @@ els.matchList.addEventListener("click", (event) => {
     delete manualResults[resultKey];
     saveManualResults();
     matches = matches.map((item) => getManualResultKey(item) === resultKey
-      ? { ...item, scoreHome: null, scoreAway: null, confirmed: false, manual: false }
+      ? { ...item, scoreHome: null, scoreAway: null, penaltiesHome: null, penaltiesAway: null, confirmed: false, manual: false }
       : item);
     render();
     return;
@@ -198,15 +198,31 @@ els.matchList.addEventListener("click", (event) => {
   const awayInput = card?.querySelector("[data-score-away]");
   const scoreHome = Number(homeInput?.value);
   const scoreAway = Number(awayInput?.value);
+  const penaltiesHomeInput = card?.querySelector("[data-penalties-home]");
+  const penaltiesAwayInput = card?.querySelector("[data-penalties-away]");
+  const isKnockout = match.group === "Eliminatorias";
 
   if (!Number.isInteger(scoreHome) || !Number.isInteger(scoreAway) || scoreHome < 0 || scoreAway < 0) {
     return;
   }
 
-  manualResults[resultKey] = { scoreHome, scoreAway };
+  let penaltiesHome = null;
+  let penaltiesAway = null;
+  if (isKnockout && scoreHome === scoreAway) {
+    penaltiesHome = Number(penaltiesHomeInput?.value);
+    penaltiesAway = Number(penaltiesAwayInput?.value);
+    if (!Number.isInteger(penaltiesHome) || !Number.isInteger(penaltiesAway)
+      || penaltiesHome < 0 || penaltiesAway < 0 || penaltiesHome === penaltiesAway) {
+      const status = card?.querySelector(".result-status, .bracket-result-status");
+      if (status) status.textContent = "Carga una tanda de penales con ganador";
+      return;
+    }
+  }
+
+  manualResults[resultKey] = { scoreHome, scoreAway, penaltiesHome, penaltiesAway };
   saveManualResults();
   matches = matches.map((item) => getManualResultKey(item) === resultKey
-    ? { ...item, scoreHome, scoreAway, confirmed: true, manual: true }
+    ? { ...item, scoreHome, scoreAway, penaltiesHome, penaltiesAway, confirmed: true, manual: true }
     : item);
   render();
 });
@@ -281,6 +297,8 @@ function applyManualResults(list) {
       ...match,
       scoreHome: saved.scoreHome,
       scoreAway: saved.scoreAway,
+      penaltiesHome: saved.penaltiesHome ?? null,
+      penaltiesAway: saved.penaltiesAway ?? null,
       confirmed: true,
       manual: true
     };
@@ -1004,6 +1022,7 @@ function renderMatchCard(match) {
       : match.confirmed ? "Confirmado" : "Pendiente";
   const scoreHome = match.scoreHome ?? "";
   const scoreAway = match.scoreAway ?? "";
+  const isKnockout = match.group === "Eliminatorias";
   return `
     <article class="match-card">
       <div class="match-meta">
@@ -1020,6 +1039,7 @@ function renderMatchCard(match) {
         <input class="score-input" data-score-home type="number" min="0" inputmode="numeric" value="${scoreHome}" aria-label="Goles de ${match.home}" />
         <span class="score-separator">-</span>
         <input class="score-input" data-score-away type="number" min="0" inputmode="numeric" value="${scoreAway}" aria-label="Goles de ${match.away}" />
+        ${isKnockout ? renderPenaltyEditor(match, match.home, match.away) : ""}
         <div class="result-actions">
           <button class="result-button accept" type="button" data-save-result="${match.id}">Guardar</button>
           <button class="result-button cancel" type="button" data-clear-result="${match.id}">Quitar</button>
@@ -1027,6 +1047,17 @@ function renderMatchCard(match) {
         <span class="result-status ${match.confirmed ? "confirmed" : ""} ${match.live ? "live" : ""} ${match.manual ? "manual" : ""}">${statusText}</span>
       </div>
     </article>
+  `;
+}
+
+function renderPenaltyEditor(match, home, away, disabledAttribute = "") {
+  return `
+    <div class="penalty-editor">
+      <span>Penales</span>
+      <input class="penalty-input" data-penalties-home type="number" min="0" inputmode="numeric" value="${match.penaltiesHome ?? ""}" aria-label="Penales de ${home}" ${disabledAttribute} />
+      <span>-</span>
+      <input class="penalty-input" data-penalties-away type="number" min="0" inputmode="numeric" value="${match.penaltiesAway ?? ""}" aria-label="Penales de ${away}" ${disabledAttribute} />
+    </div>
   `;
 }
 
@@ -1186,10 +1217,12 @@ function renderBracketMatch(match, bracketResolver) {
         ${renderBracketTeam(match.away, bracketResolver)}
         <input class="bracket-score bracket-score-input" data-score-away type="number" min="0" inputmode="numeric" value="${match.scoreAway ?? ""}" aria-label="Goles de ${away}" ${disabledAttribute} />
       </div>
+      ${renderPenaltyEditor(match, home, away, disabledAttribute)}
       <div class="bracket-result-actions">
         <button class="result-button accept" type="button" data-save-result="${match.id}" ${disabledAttribute}>Guardar</button>
         <button class="result-button cancel" type="button" data-clear-result="${match.id}" ${disabledAttribute}>Quitar</button>
       </div>
+      <span class="bracket-result-status" aria-live="polite"></span>
       <div class="bracket-venue">${match.venue}</div>
     </article>
   `;
@@ -1243,16 +1276,19 @@ function createKnockoutResolver(knockoutMatches) {
     const key = `${kind}${number}`;
     if (resolving.has(key)) return key;
     const match = matchesByNumber.get(number);
-    if (!match || !match.confirmed || match.scoreHome === null || match.scoreAway === null || match.scoreHome === match.scoreAway) {
+    if (!match || !match.confirmed || match.scoreHome === null || match.scoreAway === null) {
       return key;
     }
+
+    const tied = match.scoreHome === match.scoreAway;
+    if (tied && (match.penaltiesHome === null || match.penaltiesAway === null || match.penaltiesHome === match.penaltiesAway)) return key;
 
     resolving.add(key);
     const home = resolve(match.home);
     const away = resolve(match.away);
     resolving.delete(key);
 
-    const homeWon = match.scoreHome > match.scoreAway;
+    const homeWon = tied ? match.penaltiesHome > match.penaltiesAway : match.scoreHome > match.scoreAway;
     if (kind === "W") return homeWon ? home : away;
     return homeWon ? away : home;
   }
