@@ -172,6 +172,23 @@ els.matchList.addEventListener("click", async (event) => {
   await syncFifaApi();
 });
 
+els.matchList.addEventListener("input", (event) => {
+  if (!event.target.matches("[data-score-home], [data-score-away]")) return;
+  const card = event.target.closest(".match-card, .bracket-match");
+  const penaltyEditor = card?.querySelector("[data-penalty-editor]");
+  if (!penaltyEditor) return;
+
+  const homeValue = card.querySelector("[data-score-home]")?.value ?? "";
+  const awayValue = card.querySelector("[data-score-away]")?.value ?? "";
+  const tied = homeValue !== "" && awayValue !== "" && Number(homeValue) === Number(awayValue);
+  const locked = penaltyEditor.dataset.locked === "true";
+  penaltyEditor.classList.toggle("hidden", !tied);
+  penaltyEditor.querySelectorAll(".penalty-input").forEach((input) => {
+    input.disabled = locked || !tied;
+    if (!tied) input.value = "";
+  });
+});
+
 els.matchList.addEventListener("click", (event) => {
   const saveButton = event.target.closest("[data-save-result]");
   const clearButton = event.target.closest("[data-clear-result]");
@@ -1051,12 +1068,17 @@ function renderMatchCard(match) {
 }
 
 function renderPenaltyEditor(match, home, away, disabledAttribute = "") {
+  const hasScore = match.scoreHome !== null && match.scoreHome !== undefined
+    && match.scoreAway !== null && match.scoreAway !== undefined;
+  const tied = hasScore && Number(match.scoreHome) === Number(match.scoreAway);
+  const locked = Boolean(disabledAttribute);
+  const penaltyDisabled = locked || !tied ? "disabled" : "";
   return `
-    <div class="penalty-editor">
+    <div class="penalty-editor ${tied ? "" : "hidden"}" data-penalty-editor data-locked="${locked}">
       <span>Penales</span>
-      <input class="penalty-input" data-penalties-home type="number" min="0" inputmode="numeric" value="${match.penaltiesHome ?? ""}" aria-label="Penales de ${home}" ${disabledAttribute} />
+      <input class="penalty-input" data-penalties-home type="number" min="0" inputmode="numeric" value="${match.penaltiesHome ?? ""}" aria-label="Penales de ${home}" ${penaltyDisabled} />
       <span>-</span>
-      <input class="penalty-input" data-penalties-away type="number" min="0" inputmode="numeric" value="${match.penaltiesAway ?? ""}" aria-label="Penales de ${away}" ${disabledAttribute} />
+      <input class="penalty-input" data-penalties-away type="number" min="0" inputmode="numeric" value="${match.penaltiesAway ?? ""}" aria-label="Penales de ${away}" ${penaltyDisabled} />
     </div>
   `;
 }
