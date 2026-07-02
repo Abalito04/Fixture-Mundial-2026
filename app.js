@@ -1228,7 +1228,7 @@ function renderBracketMatch(match, bracketResolver) {
   return `
     <article class="bracket-match">
       <div class="bracket-match-meta">
-        <span>${formatDate(match.date)}</span>
+        <span>${formatBracketDate(match.date)}</span>
         <strong>${match.time || "Hora a confirmar"}</strong>
       </div>
       <div class="bracket-team">
@@ -1684,6 +1684,12 @@ function groupBy(items, getter) {
 
 function formatDate(value) {
   return new Intl.DateTimeFormat("es-AR", { weekday: "long", day: "2-digit", month: "long" }).format(new Date(`${value}T12:00:00`));
+}
+
+function formatBracketDate(value) {
+  return new Intl.DateTimeFormat("es-AR", { day: "2-digit", month: "short" })
+    .format(new Date(`${value}T12:00:00`))
+    .replace(".", "");
 }
 
 function render() {
