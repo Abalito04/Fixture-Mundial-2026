@@ -676,7 +676,7 @@ body[data-view="grupos"] .right-rail {
 
 .bracket-tree {
   grid-template-columns: minmax(0, 1fr) 170px minmax(0, 1fr);
-  min-height: 1070px;
+  min-height: 850px;
   padding: 0 4px 8px;
 }
 
@@ -708,7 +708,7 @@ body[data-view="grupos"] .right-rail {
 .bracket-tree-round .bracket-match-list {
   display: grid;
   grid-template-rows: repeat(var(--match-count), minmax(0, 1fr));
-  height: 1020px;
+  height: 800px;
   gap: 0;
 }
 
@@ -817,8 +817,8 @@ body[data-view="grupos"] .right-rail {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 3px;
-  min-height: 96px;
-  padding: 6px;
+  min-height: 82px;
+  padding: 5px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: #fff;
@@ -850,6 +850,10 @@ body[data-view="grupos"] .right-rail {
   white-space: nowrap;
 }
 
+.bracket-match .bracket-venue {
+  display: none;
+}
+
 .bracket-match-meta strong {
   color: var(--green-dark);
 }
@@ -859,7 +863,7 @@ body[data-view="grupos"] .right-rail {
   grid-template-columns: minmax(0, 1fr) 24px;
   gap: 4px;
   align-items: center;
-  min-height: 23px;
+  min-height: 20px;
 }
 
 .bracket-team-name {
@@ -936,8 +940,8 @@ body[data-view="grupos"] .right-rail {
 }
 
 .bracket-result-actions .result-button {
-  min-height: 22px;
-  padding: 2px 6px;
+  min-height: 18px;
+  padding: 1px 5px;
   font-size: 9px;
 }
 
@@ -991,6 +995,10 @@ body[data-view="grupos"] .right-rail {
   color: var(--danger);
   font-size: 9px;
   font-weight: 800;
+}
+
+.bracket-result-status:empty {
+  display: none;
 }
 
 .final-stack {
@@ -1661,8 +1669,33 @@ body[data-view="grupos"] .right-rail {
     flex-direction: column;
   }
 
+  .bracket-board {
+    gap: 10px;
+    padding: 10px 6px;
+  }
+
+  .bracket-toolbar h3 {
+    font-size: 17px;
+  }
+
+  .bracket-scroll {
+    margin-inline: -6px;
+    padding-inline: 6px;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x proximity;
+    scrollbar-width: thin;
+  }
+
   .bracket-grid {
-    min-width: 1400px;
+    min-width: 1180px;
+  }
+
+  .bracket-tree {
+    grid-template-columns: minmax(0, 1fr) 150px minmax(0, 1fr);
+  }
+
+  .bracket-round {
+    scroll-snap-align: start;
   }
 }
 

@@ -1,8 +1,8 @@
-const CACHE_NAME = "road-to-26-v28";
+const CACHE_NAME = "road-to-26-v29";
 const APP_SHELL = [
   "/",
   "/index.html",
-  "/styles.css?v=61",
+  "/styles.css?v=62",
   "/third-place-combinations.js?v=1",
   "/app.js?v=61",
   "/manifest.json",
