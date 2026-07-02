@@ -1181,8 +1181,14 @@ function renderBracketSide(roundMatches, bracketResolver, side) {
 }
 
 function renderBracketTreeRound(label, roundMatches, bracketResolver, side) {
+  const roundClass = {
+    "16vos": "bracket-round-32",
+    "8vos": "bracket-round-16",
+    "4tos": "bracket-round-quarter",
+    Semis: "bracket-round-semi"
+  }[label] || "";
   return `
-    <section class="bracket-round bracket-tree-round bracket-tree-round-${side}" style="--match-count: ${Math.max(roundMatches.length, 1)}">
+    <section class="bracket-round bracket-tree-round bracket-tree-round-${side} ${roundClass}" style="--match-count: ${Math.max(roundMatches.length, 1)}">
       <div class="bracket-round-head"><h3>${label}</h3></div>
       <div class="bracket-match-list">
         ${roundMatches.map((match, index) => `
