@@ -1129,7 +1129,7 @@ function renderKnockoutFullView() {
       </div>
       ${guaranteedThirds.length ? `
         <div class="qualified-thirds">
-          <strong>Mejores terceros asegurados</strong>
+          <strong><span class="qualified-label-wide">Mejores terceros asegurados</span><span class="qualified-label-mobile">Terceros</span></strong>
           <div class="qualified-thirds-list">
             ${guaranteedThirds.map((row) => `
               <span class="qualified-third">${teamSwatch(row.team)} ${row.team} <small>Grupo ${row.groupLetter}</small></span>

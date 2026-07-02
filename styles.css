@@ -1022,15 +1022,17 @@ body[data-view="grupos"] .right-rail {
 }
 
 .final-stack {
-  display: grid;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
   gap: 24px;
-  grid-template-rows: minmax(0, 1fr) auto;
   padding: 0 8px 24px;
 }
 
 .bracket-center > .bracket-round:first-child {
   display: grid;
-  grid-template-rows: 34px minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  gap: 8px;
 }
 
 .bracket-center .bracket-round-head {
@@ -1044,7 +1046,7 @@ body[data-view="grupos"] .right-rail {
 
 .bracket-center .bracket-match-list {
   display: grid;
-  align-content: center;
+  align-content: start;
   min-height: 0;
 }
 
@@ -1698,6 +1700,43 @@ body[data-view="grupos"] .right-rail {
     font-size: 17px;
   }
 
+  .qualified-thirds {
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: 8px;
+    padding: 7px 8px;
+  }
+
+  .qualified-label-wide {
+    display: none;
+  }
+
+  .qualified-label-mobile {
+    display: inline;
+    font-size: 11px;
+  }
+
+  .qualified-thirds-list {
+    flex-wrap: nowrap;
+    gap: 4px;
+    min-width: 0;
+    padding-bottom: 2px;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: thin;
+  }
+
+  .qualified-third {
+    flex: 0 0 auto;
+    gap: 4px;
+    padding: 3px 5px;
+    font-size: 11px;
+  }
+
+  .qualified-third small {
+    font-size: 9px;
+  }
+
   .bracket-scroll {
     margin-inline: -6px;
     padding-inline: 6px;
@@ -1982,6 +2021,10 @@ h2 {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
+}
+
+.qualified-label-mobile {
+  display: none;
 }
 
 .qualified-third {

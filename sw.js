@@ -1,10 +1,10 @@
-const CACHE_NAME = "road-to-26-v30";
+const CACHE_NAME = "road-to-26-v31";
 const APP_SHELL = [
   "/",
   "/index.html",
-  "/styles.css?v=63",
+  "/styles.css?v=64",
   "/third-place-combinations.js?v=1",
-  "/app.js?v=63",
+  "/app.js?v=64",
   "/manifest.json",
   "/assets/road-to-26.png",
   "/api/openfootball/worldcup2026",
