@@ -670,12 +670,12 @@ body[data-view="grupos"] .right-rail {
 .bracket-grid {
   display: grid;
   gap: 0;
-  min-width: 1400px;
+  min-width: 1480px;
   align-items: stretch;
 }
 
 .bracket-tree {
-  grid-template-columns: minmax(0, 1fr) 170px minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) 180px minmax(0, 1fr);
   min-height: 0;
   padding: 0 4px 8px;
 }
@@ -683,7 +683,7 @@ body[data-view="grupos"] .right-rail {
 .bracket-branch {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 16px;
+  gap: 12px;
 }
 
 .bracket-tree-round {
@@ -718,17 +718,17 @@ body[data-view="grupos"] .right-rail {
 }
 
 .bracket-round-16 {
-  --round-gap: 115px;
-  --round-offset: 53px;
+  --round-gap: 136px;
+  --round-offset: 62px;
 }
 
 .bracket-round-quarter {
-  --round-gap: 329px;
-  --round-offset: 160px;
+  --round-gap: 386px;
+  --round-offset: 185px;
 }
 
 .bracket-round-semi {
-  --round-offset: 374px;
+  --round-offset: 431px;
 }
 
 .bracket-slot {
@@ -836,9 +836,9 @@ body[data-view="grupos"] .right-rail {
 .bracket-match {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  gap: 3px;
-  min-height: 82px;
-  padding: 5px;
+  gap: 5px;
+  min-height: 108px;
+  padding: 7px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: #fff;
@@ -951,12 +951,12 @@ body[data-view="grupos"] .right-rail {
 }
 
 .bracket-result-actions {
-  grid-column: 2;
-  grid-row: 4;
+  grid-column: 1 / -1;
+  grid-row: 5;
   display: flex;
   justify-content: flex-end;
   gap: 4px;
-  padding-top: 2px;
+  padding-top: 0;
 }
 
 .bracket-result-actions .result-button {
@@ -977,7 +977,7 @@ body[data-view="grupos"] .right-rail {
 }
 
 .bracket-match .penalty-editor {
-  grid-column: 1;
+  grid-column: 1 / -1;
   grid-row: 4;
   justify-content: flex-start;
 }
@@ -1746,11 +1746,15 @@ body[data-view="grupos"] .right-rail {
   }
 
   .bracket-grid {
-    min-width: 1180px;
+    min-width: 1320px;
   }
 
   .bracket-tree {
-    grid-template-columns: minmax(0, 1fr) 150px minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) 160px minmax(0, 1fr);
+  }
+
+  .bracket-branch {
+    gap: 10px;
   }
 
   .bracket-round {
